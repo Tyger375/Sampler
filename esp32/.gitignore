@@ -1,0 +1,6 @@
+*.lock
+.idea/
+build/
+managed_components/
+sdkconfig.old
+env.sh

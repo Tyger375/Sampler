@@ -1,0 +1,1726 @@
+(kicad_sch
+	(version 20250114)
+	(generator "eeschema")
+	(generator_version "9.0")
+	(uuid "35b64996-2b91-4b7f-a5ea-a764ebc5e787")
+	(paper "A4")
+	(lib_symbols
+		(symbol "Altium_WL-SMCC (rev24a):root_3_150060RS73220_Altium_WL-SMCC (rev24a).IntLib"
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "WL-SMCC Mono-color Chip LED Compact, SMT, size 0603, Red, 2V, 120°"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "*WL-SMCC_0603_150060xx73220*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "root_3_150060RS73220_Altium_WL-SMCC (rev24a).IntLib_1_0"
+				(polyline
+					(pts
+						(xy -2.54 -5.08) (xy 0 -7.62) (xy 2.54 -5.08) (xy -2.54 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type color)
+						(color 255 0 0 1)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -7.62) (xy -2.54 -7.62)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.54 -8.636) (xy 4.318 -10.414)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 3.556 -7.62) (xy 5.334 -9.398)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 4.318 -10.414) (xy 3.81 -9.398) (xy 3.302 -9.906) (xy 4.318 -10.414)
+					)
+					(stroke
+						(width -0.0001)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 5.334 -9.398) (xy 4.826 -8.382) (xy 4.318 -8.89) (xy 5.334 -9.398)
+					)
+					(stroke
+						(width -0.0001)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(pin passive line
+					(at 0 0 270)
+					(length 5.08)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -12.7 90)
+					(length 5.08)
+					(name "K"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Passive SMD:root_1_RES_Passive SMD.IntLib"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "RES"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "*RESC0603(1608)_N*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "root_1_RES_Passive SMD.IntLib_1_0"
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0 3.556) (xy -0.508 3.81) (xy 0.508 4.318) (xy -0.508 4.826) (xy 0.508 5.334)
+						(xy -0.508 5.842) (xy 0.508 6.35) (xy 0 6.604) (xy 0 7.62)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at 0 10.16 270)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 0 90)
+					(length 2.54)
+					(name "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Wurth_WR-PHD (rev24a):root_0_62100421921_Wurth_WR-PHD (rev24a).IntLib"
+			(pin_names
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "WR-PHD Pin Header, SMT, Vertical, pitch 2mm, 2 Row, 4P"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "*62100421921*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "root_0_62100421921_Wurth_WR-PHD (rev24a).IntLib_1_0"
+				(polyline
+					(pts
+						(xy 0 0) (xy 10.16 0) (xy 10.16 -7.62) (xy 0 -7.62) (xy 0 0) (xy 0 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -2.54) (xy 1.778 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 -5.08) (xy 1.778 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(circle
+					(center 2.54 -2.54)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 2.54 -5.08)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 7.62 -2.54)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 7.62 -5.08)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 10.16 -2.54) (xy 8.382 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 10.16 -5.08) (xy 8.382 -5.08)
+					)
+					(stroke
+						(width 0)
+						(type solid)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at -5.08 -2.54 0)
+					(length 5.08)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -5.08 -5.08 0)
+					(length 5.08)
+					(name "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 15.24 -2.54 180)
+					(length 5.08)
+					(name "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 15.24 -5.08 180)
+					(length 5.08)
+					(name "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+	)
+	(junction
+		(at 83.82 67.7672)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6237f261-e1da-4230-965c-5709339612bb")
+	)
+	(junction
+		(at 83.82 37.2872)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "ff2a0f9a-587e-46dc-9aed-5e3c8a557788")
+	)
+	(wire
+		(pts
+			(xy 83.82 67.7672) (xy 83.82 65.2272)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "38688db4-5bf3-4b55-b72e-adbc61c7a570")
+	)
+	(wire
+		(pts
+			(xy 83.82 39.8272) (xy 83.82 37.2872)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "396ae450-9199-4165-9eda-5c8ead0d47e6")
+	)
+	(wire
+		(pts
+			(xy 99.06 37.2872) (xy 99.06 39.8272)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "524bbce0-90ca-4c42-9e1a-4af7bb0bc977")
+	)
+	(wire
+		(pts
+			(xy 55.88 37.2872) (xy 83.82 37.2872)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "66883320-c130-48e8-ba6c-8c806d7c1dc2")
+	)
+	(wire
+		(pts
+			(xy 83.82 67.7672) (xy 66.04 67.7672)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a388dfe2-9bee-4997-8eb8-e2e599bcd8cc")
+	)
+	(wire
+		(pts
+			(xy 83.82 52.5272) (xy 83.82 49.9872)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a66e6358-02b0-4727-9c91-dd0b02b69a95")
+	)
+	(wire
+		(pts
+			(xy 99.06 67.7672) (xy 83.82 67.7672)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aa49fe22-5659-4d44-8646-6ab6376a4de7")
+	)
+	(wire
+		(pts
+			(xy 99.06 65.2272) (xy 99.06 67.7672)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "aa66e5cc-eec3-44fa-a95c-5025033a00be")
+	)
+	(wire
+		(pts
+			(xy 66.04 39.8272) (xy 55.88 39.8272)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "acbb628b-8201-4b91-b5b9-074b00362745")
+	)
+	(wire
+		(pts
+			(xy 25.4 39.8272) (xy 35.56 39.8272)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b0a8647d-2d52-49ea-bda5-7bd27839856d")
+	)
+	(wire
+		(pts
+			(xy 99.06 52.5272) (xy 99.06 49.9872)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b6fae91b-0e21-408a-98a0-40599f59fe4c")
+	)
+	(wire
+		(pts
+			(xy 66.04 67.7672) (xy 66.04 39.8272)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d2e49e58-494c-41df-b85d-85db989baea5")
+	)
+	(wire
+		(pts
+			(xy 83.82 37.2872) (xy 99.06 37.2872)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d4bd4d80-9761-4e1c-be81-4392b993c66f")
+	)
+	(wire
+		(pts
+			(xy 25.4 37.2872) (xy 35.56 37.2872)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e71ea393-b69e-4037-bfa7-f2c3fd248d22")
+	)
+	(label "LED_ON"
+		(at 55.88 37.2872 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "21799580-db31-4d13-8648-6bc93c8ea77d")
+	)
+	(label "LED_GND"
+		(at 55.88 39.8272 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "9c00add0-63f7-4d42-87cc-a34be2f81086")
+	)
+	(label "Btn_Output"
+		(at 25.4 39.8272 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "aaa84f21-f192-43fb-86b2-e40918b3ac5a")
+	)
+	(label "Btn_Power"
+		(at 25.4 37.2872 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e3922a44-ce2b-4e61-98ea-14bbfcc346ec")
+	)
+	(symbol
+		(lib_id "Wurth_WR-PHD (rev24a):root_0_62100421921_Wurth_WR-PHD (rev24a).IntLib")
+		(at 40.64 34.7472 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "55eb42d3-0ad1-42b6-b60b-771859a2219e")
+		(property "Reference" "P1"
+			(at 40.386 45.1612 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "62100421921"
+			(at 40.64 34.7472 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "62100421921"
+			(at 40.64 34.7472 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 40.64 34.7472 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "WR-PHD Pin Header, SMT, Vertical, pitch 2mm, 2 Row, 4P"
+			(at 40.64 34.7472 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER PART NUMBER" "62100421921"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CATEGORY" "Board-to-Board Connectors"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MATCH CODE" "WR-PHD"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK1DESCRIPTION" "Website Link"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK1URL" "https://www.we-online.com/redexpert/article/62100421921?ad"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK2DESCRIPTION" "Datasheet Link"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK2URL" "https://www.we-online.com/redexpert/spec/62100421921?ad"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER" "Wurth Elektronik"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MOUNT" "Surface Mount"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "OPERATING TEMPERATURE MAX" "105°C"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "OPERATING TEMPERATURE MIN" "-40°C"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "PACKAGING" "Tube"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CONTACT RESISTANCE" "20mOhm"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "GENDER" "Pin Header"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "NUMBER OF PINS" "4"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "NUMBER OF ROWS" "2"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "ORIENTATION" "Vertical"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "PITCH" "2mm"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "RATED CURRENT" "2A"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "WORKING VOLTAGE" "200V"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "WITHSTANDING VOLTAGE" "500V"
+			(at 35.052 32.2072 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "SYSTEM" "Connector"
+			(at 35.052 47.7012 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(pin "3"
+			(uuid "cde61e1a-0346-4830-83b8-5574540a4da9")
+		)
+		(pin "1"
+			(uuid "d63ca52f-b687-4077-ae8c-30841e3984a0")
+		)
+		(pin "4"
+			(uuid "1688e5f1-1e58-4282-99e6-a8ef0a708c31")
+		)
+		(pin "2"
+			(uuid "0cc1c270-df9c-48d5-9a1e-1e9b57b42c62")
+		)
+		(instances)
+	)
+	(symbol
+		(lib_id "Passive SMD:root_1_RES_Passive SMD.IntLib")
+		(at 83.82 49.9872 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a62ffaae-d968-4a42-8da7-8914cdce5acb")
+		(property "Reference" "R1"
+			(at 84.582 44.6532 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "220"
+			(at 84.582 47.1932 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Footprint" "RESC0603(1608)_N"
+			(at 83.82 49.9872 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 83.82 49.9872 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RES"
+			(at 83.82 49.9872 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "9f47320c-87ad-4d64-bb1f-db8f038ab1eb")
+		)
+		(pin "1"
+			(uuid "e6e9d42a-1842-46d2-90f5-1eb255228dad")
+		)
+		(instances)
+	)
+	(symbol
+		(lib_id "Passive SMD:root_1_RES_Passive SMD.IntLib")
+		(at 99.06 49.9872 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ab93897a-0ad8-46e6-88ee-4dd0e23fc620")
+		(property "Reference" "R2"
+			(at 99.822 44.6532 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "220"
+			(at 99.822 47.1932 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Footprint" "RESC0603(1608)_N"
+			(at 99.06 49.9872 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 99.06 49.9872 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RES"
+			(at 99.06 49.9872 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "1ff7ad0b-3c28-4574-8368-450ac33c80b7")
+		)
+		(pin "1"
+			(uuid "3ec685a9-2655-4a29-9262-98cc283c3bee")
+		)
+		(instances)
+	)
+	(symbol
+		(lib_id "Altium_WL-SMCC (rev24a):root_3_150060RS73220_Altium_WL-SMCC (rev24a).IntLib")
+		(at 99.06 52.5272 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d0df3bb7-9a47-4d0e-90b4-0c0ce05f1ffb")
+		(property "Reference" "D2"
+			(at 104.648 59.8932 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "Red, 2V, 120°"
+			(at 104.648 62.4332 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "WL-SMCC_0603_150060xx73220"
+			(at 99.06 52.5272 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 99.06 52.5272 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "WL-SMCC Mono-color Chip LED Compact, SMT, size 0603, Red, 2V, 120°"
+			(at 99.06 52.5272 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER PART NUMBER" "150060RS73220"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CATEGORY" "Signal LEDs"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MATCH CODE" "WL-SMCC"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK1DESCRIPTION" "Website Link"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK1URL" "https://www.we-online.com/redexpert/article/150060RS73220?ad"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK2DESCRIPTION" "Datasheet Link"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK2URL" "https://www.we-online.com/redexpert/spec/150060RS73220?ad"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER" "Wurth Elektronik"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MOUNT" "Surface Mount"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "OPERATING TEMPERATURE MAX" "85°C"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "OPERATING TEMPERATURE MIN" "-40°C"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "PACKAGING" "Tape and Reel"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CASE/SIZE CODE" "0603"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "LENGTH" "1.6mm"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "WIDTH" "0.8mm"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "HEIGHT" "0.2mm"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CHIP TECHNOLOGY" "AlInGaP"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "DOMINANT WAVELENGTH" "624nm"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "EMITTING COLOR" "Red"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "FORWARD VOLTAGE" "2V"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "LUMINOUS INTENSITY" "90mcd"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "PEAK WAVELENGTH" "632nm"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "VIEWING ANGLE" "120°"
+			(at 96.266 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "c11bb8e1-9b86-46e6-86c9-44eb97e827d8")
+		)
+		(pin "1"
+			(uuid "c03c0138-d51e-429d-bf10-0e9cdf123f63")
+		)
+		(instances)
+	)
+	(symbol
+		(lib_id "Altium_WL-SMCC (rev24a):root_3_150060RS73220_Altium_WL-SMCC (rev24a).IntLib")
+		(at 83.82 52.5272 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "d4bddd74-635a-4220-98d6-39ebe6e270ef")
+		(property "Reference" "D1"
+			(at 89.408 59.8932 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Value" "Red, 2V, 120°"
+			(at 89.408 62.4332 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "WL-SMCC_0603_150060xx73220"
+			(at 83.82 52.5272 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 83.82 52.5272 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "WL-SMCC Mono-color Chip LED Compact, SMT, size 0603, Red, 2V, 120°"
+			(at 83.82 52.5272 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER PART NUMBER" "150060RS73220"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CATEGORY" "Signal LEDs"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MATCH CODE" "WL-SMCC"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK1DESCRIPTION" "Website Link"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK1URL" "https://www.we-online.com/redexpert/article/150060RS73220?ad"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK2DESCRIPTION" "Datasheet Link"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "COMPONENTLINK2URL" "https://www.we-online.com/redexpert/spec/150060RS73220?ad"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MANUFACTURER" "Wurth Elektronik"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "MOUNT" "Surface Mount"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "OPERATING TEMPERATURE MAX" "85°C"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "OPERATING TEMPERATURE MIN" "-40°C"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "PACKAGING" "Tape and Reel"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CASE/SIZE CODE" "0603"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "LENGTH" "1.6mm"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "WIDTH" "0.8mm"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "HEIGHT" "0.2mm"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "CHIP TECHNOLOGY" "AlInGaP"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "DOMINANT WAVELENGTH" "624nm"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "EMITTING COLOR" "Red"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "FORWARD VOLTAGE" "2V"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "LUMINOUS INTENSITY" "90mcd"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "PEAK WAVELENGTH" "632nm"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "VIEWING ANGLE" "120°"
+			(at 81.026 52.0192 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "84502c70-5e12-4ca4-9421-5dd7d95ac5f0")
+		)
+		(pin "1"
+			(uuid "7f4643c0-8759-4eb8-bec6-a548a14b25a5")
+		)
+		(instances)
+	)
+)
