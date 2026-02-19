@@ -1,17 +1,19 @@
 #include "freertos/FreeRTOS.h"
 #include <driver/i2c_master.h>
+#include <graphics/drivers/lcd1602/lcd1602.h>
+#include <graphics/drivers/logger/logger.h>
 #include <sequencer/sequencer.h>
-
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "tinyusb.h"
-#include "graphics/lcd.h"
 #include "pads/pads.h"
 #include "usb/usb.h"
 #include "quantizer/quantizer.h"
 #include "selector/selector.h"
 #include "settings/settings_manager.h"
 #include "screens/screens.h"
+
+#include <graphics/manager/graphics_manager.h>
 
 void sequencer_task(void* /*pvParameters*/) {
     const auto& quantizer = Quantizer::instance();
@@ -152,14 +154,20 @@ extern "C" void app_main()
         1
     );
 
+    GraphicsManager graphics_manager;
+    graphics_manager.install_driver(std::make_unique<lcd1602_driver>(i2c_bus_handle, 0x27));
+    graphics_manager.install_driver(std::make_unique<logger_driver>());
+
+    graphics_manager.load_screen("home", create_home_screen);
+    graphics_manager.navigate("home");
     /* Graphics */
-    lcd lcd(i2c_bus_handle, 0x27);
+    /*lcd lcd(i2c_bus_handle, 0x27);
     create_home_screen(lcd);
     create_settings_screen(lcd);
     create_pad_settings_screen(lcd);
     create_sequencer_screen(lcd);
     lcd.navigate("home");
-    lcd.render();
+    lcd.render();*/
 
     QueueHandle_t selector_events = xQueueCreate(10, sizeof(selector_event_t));
     selector_config_t selector_config = {
@@ -187,6 +195,45 @@ extern "C" void app_main()
 
     while (true)
     {
+        QueueSetMemberHandle_t input = xQueueSelectFromSet(graphics_inputs_events, portMAX_DELAY);
+
+        if (input == selector_events)
+        {
+            xQueueReceive(selector_events, &selector_event, 0);
+
+            switch (selector_event)
+            {
+            case ROTATION_LEFT:
+                graphics_manager.send_event(EVENT_SCROLL_LEFT);
+                break;
+            case ROTATION_RIGHT:
+                graphics_manager.send_event(EVENT_SCROLL_RIGHT);
+                break;
+            case BUTTON_PRESSED:
+                press_start_time = esp_log_timestamp();
+                break;
+            case BUTTON_RELEASED:
+                {
+                    const uint32_t duration = esp_log_timestamp() - press_start_time;
+
+                    if (duration >= LONG_PRESS_THRESHOLD_MS)
+                    {
+                        // graphics_manager.send_event(EVENT_BACK);
+                    } else
+                    {
+                        graphics_manager.send_event(EVENT_CLICK);
+                    }
+                } break;
+            default:
+                break;
+            }
+        } else if (input == padsManager.pads_input_events)
+        {
+            xQueueReceive(padsManager.pads_input_events, &pad_input_event, 0);
+        }
+
+        graphics_manager.update();
+        /*
         QueueSetMemberHandle_t input = xQueueSelectFromSet(graphics_inputs_events, portMAX_DELAY);
 
         if (input == selector_events)
@@ -237,6 +284,6 @@ extern "C" void app_main()
             }
         }
 
-        lcd.render();
+        lcd.render();*/
     }
 }

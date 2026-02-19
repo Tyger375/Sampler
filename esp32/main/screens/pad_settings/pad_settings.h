@@ -1,7 +1,7 @@
 #ifndef SAMPLER_PAD_SETTINGS_SCREEN_H
 #define SAMPLER_PAD_SETTINGS_SCREEN_H
 
-#include "graphics/screen/screen.h"
+#include "graphics_test/screen/screen.h"
 
 class PadSettingsScreen : public Screen
 {

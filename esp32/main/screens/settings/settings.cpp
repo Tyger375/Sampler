@@ -1,12 +1,12 @@
 #include "settings.h"
 
-#include <graphics/ui/button/button.h>
-#include <graphics/ui/intinput/intinput.h>
+#include <graphics_test/ui/button/button.h>
+#include <graphics_test/ui/intinput/intinput.h>
 
 #include "../screens.h"
 #include "settings/settings_manager.h"
-#include "graphics/ui/text/text.h"
-#include "graphics/ui/intinput/intinput.h"
+#include "graphics_test/ui/text/text.h"
+#include "graphics_test/ui/intinput/intinput.h"
 #include "esp_log.h"
 
 void create_settings_screen(lcd& lcd)

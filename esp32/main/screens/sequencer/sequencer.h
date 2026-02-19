@@ -1,7 +1,7 @@
 #ifndef SAMPLER_SEQUENCER_SCREEN_H
 #define SAMPLER_SEQUENCER_SCREEN_H
 
-#include "graphics/screen/screen.h"
+#include "graphics_test/screen/screen.h"
 
 class SequencerScreen : public Screen
 {

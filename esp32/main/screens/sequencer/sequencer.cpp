@@ -1,11 +1,11 @@
 #include "sequencer.h"
 
 #include <esp_log.h>
-#include <graphics/ui/button/button.h>
+#include <graphics_test/ui/button/button.h>
 
 #include "../screens.h"
-#include <graphics/ui/checkbox/checkbox.h>
-#include <graphics/ui/text/text.h>
+#include <graphics_test/ui/checkbox/checkbox.h>
+#include <graphics_test/ui/text/text.h>
 #include <pads/pads.h>
 #include <quantizer/quantizer.h>
 #include <sequencer/sequencer.h>
