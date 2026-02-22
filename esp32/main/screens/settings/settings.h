@@ -1,15 +1,13 @@
 #ifndef SAMPLER_SETTINGS_SCREEN_H
 #define SAMPLER_SETTINGS_SCREEN_H
 
-#include <graphics_test/lcd.h>
-
-#include "graphics_test/screen/screen.h"
+#include <graphics/manager/graphics_manager.h>
+#include <graphics/screen/screen.h>
 
 class SettingsScreen : public Screen
 {
 public:
-    SettingsScreen(lcd& lcd);
-    bool on_custom_event(uint32_t) override;
+    explicit SettingsScreen(GraphicsManager&);
 };
 
 

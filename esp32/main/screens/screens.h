@@ -5,6 +5,7 @@
 #include <graphics/screen/screen.h>
 
 screen_t create_home_screen(GraphicsManager&);
+screen_t create_settings_screen(GraphicsManager&);
 /*
 void create_settings_screen(lcd&);
 void create_pad_settings_screen(lcd&);

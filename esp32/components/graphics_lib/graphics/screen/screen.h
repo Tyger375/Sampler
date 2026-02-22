@@ -20,10 +20,25 @@ public:
 
     void add_element(std::unique_ptr<UIElement> element);
 
-    virtual void on_start() {}
+    virtual void on_start()
+    {
+        for (const auto& ui_element : elements)
+        {
+            ui_element->on_event(EVENT_SCREEN_START);
+        }
+    }
+
+    virtual void on_end()
+    {
+        for (const auto& ui_element : elements)
+        {
+            ui_element->on_event(EVENT_SCREEN_END);
+        }
+    }
 
     virtual void on_scroll(bool);
     virtual void on_click();
+    virtual bool on_back();
     /*
 
     const graphics_elements_t& get();

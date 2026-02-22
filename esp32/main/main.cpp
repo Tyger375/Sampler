@@ -159,6 +159,7 @@ extern "C" void app_main()
     graphics_manager.install_driver(std::make_unique<logger_driver>());
 
     graphics_manager.load_screen("home", create_home_screen);
+    graphics_manager.load_screen("settings", create_settings_screen);
     graphics_manager.navigate("home");
     /* Graphics */
     /*lcd lcd(i2c_bus_handle, 0x27);
@@ -218,7 +219,7 @@ extern "C" void app_main()
 
                     if (duration >= LONG_PRESS_THRESHOLD_MS)
                     {
-                        // graphics_manager.send_event(EVENT_BACK);
+                        graphics_manager.send_event(EVENT_BACK);
                     } else
                     {
                         graphics_manager.send_event(EVENT_CLICK);

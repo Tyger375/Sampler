@@ -1,3 +1,5 @@
+/*
+ * DEPRECATED
 #ifndef SAMPLER_LCD_H
 #define SAMPLER_LCD_H
 
@@ -9,7 +11,6 @@
 #include "screen/screen.h"
 //#include "driver/lcd1602.h"
 
-/*
 class lcd
 {
     //lcd1602 display;
@@ -41,6 +42,6 @@ public:
     void action_click();
     void action_long_click();
 };
-*/
 
 #endif //SAMPLER_LCD_H
+*/

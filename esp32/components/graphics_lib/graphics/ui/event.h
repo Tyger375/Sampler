@@ -10,7 +10,10 @@ enum graphics_event_t
     EVENT_SCROLL_RIGHT,
 
     EVENT_CLICK,
-    EVENT_BACK
+    EVENT_BACK,
+
+    EVENT_SCREEN_START,
+    EVENT_SCREEN_END,
 };
 
 enum user_event_t

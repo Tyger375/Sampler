@@ -6,6 +6,7 @@
 #include <graphics/manager/graphics_manager.h>
 #include <graphics/screen/screen.h>
 #include <graphics/ui/button/button.h>
+#include <graphics/ui/row/row.h>
 #include <graphics/ui/text/text.h>
 
 screen_t create_home_screen(GraphicsManager& graphics_manager)
@@ -19,17 +20,30 @@ screen_t create_home_screen(GraphicsManager& graphics_manager)
 
 HomeScreen::HomeScreen(GraphicsManager& graphics_manager) : Screen("home")
 {
-    auto title = std::make_unique<UIText>("TITLE");
-    add_element(std::move(title));
+    add_element(std::make_unique<UIText>("TITLE"));
 
-    ui_button_config_t config{
-        .text = "Test",
-        .callback = []
+    auto row = std::make_unique<UIRow>();
+    ui_button_config_t sequencerBtn{
+        .text = "Sequencer",
+        .callback = [&graphics_manager]
         {
-            ESP_LOGI("TEST", "BUTTON CLICKED");
+            graphics_manager.navigate("sequencer");
         }
     };
-    add_element(std::make_unique<UIButton>(config));
+    row->add_element(std::make_unique<UIButton>(sequencerBtn));
+
+    row->add_element(std::make_unique<UIText>("Test"));
+
+    add_element(std::move(row));
+
+    ui_button_config_t settings_btn{
+        .text = "Settings",
+        .callback = [&graphics_manager]
+        {
+            graphics_manager.navigate("settings");
+        }
+    };
+    add_element(std::make_unique<UIButton>(settings_btn));
     /*
     auto row = std::make_unique<UIRow>();
     row->add_element(std::make_unique<UIButton>("Sequencer", [&lcd]

@@ -1,45 +1,51 @@
 #include "settings.h"
 
-#include <graphics_test/ui/button/button.h>
-#include <graphics_test/ui/intinput/intinput.h>
+#include <graphics/ui/button/button.h>
+#include <graphics/ui/intinput/intinput.h>
+#include <graphics/ui/text/text.h>
 
 #include "../screens.h"
 #include "settings/settings_manager.h"
-#include "graphics_test/ui/text/text.h"
-#include "graphics_test/ui/intinput/intinput.h"
 #include "esp_log.h"
 
-void create_settings_screen(lcd& lcd)
+screen_t create_settings_screen(GraphicsManager& graphics_manager)
 {
-    auto screen = std::make_unique<SettingsScreen>(lcd);
-    lcd.load_screen(std::move(screen));
+    return std::make_unique<SettingsScreen>(graphics_manager);
 }
 
-SettingsScreen::SettingsScreen(lcd& lcd) : Screen("settings")
+SettingsScreen::SettingsScreen(GraphicsManager& graphics_manager) : Screen("settings")
 {
     const auto& settings = SettingsManager::instance();
+    add_element(std::make_unique<UIText>("Settings"));
 
-    auto title = std::make_unique<UIText>("Settings");
-    add_element(std::move(title));
+    ui_intinput_config_t bpmSettings{
+        .text = "BPM",
+        .customFormat = [](const int value)
+        {
+            return std::to_string(value);
+        },
+        .onChange = [](const int value)
+        {
+            if (value > 200)
+                return value;
+            if (value < 60)
+                return value;
+            return value;
+        },
+        .onDone = [](const int value)
+        {
+            ESP_LOGI("SAMPLER", "BPM SAVING %i", value);
+            SettingsManager::instance().save_bpm(value);
+        },
+    };
+    add_element(std::make_unique<UIIntInput>(bpmSettings, settings.bpm));
 
-    auto bpmSetting = std::make_unique<UIIntInput>([](const int value) {
-        ESP_LOGI("SAMPLER", "BPM SAVING %i", value);
-        SettingsManager::instance().save_bpm(value);
-    });
-    bpmSetting->label = "BPM";
-    bpmSetting->minValue = 60;
-    bpmSetting->maxValue = 200;
-    bpmSetting->value = settings.bpm;
-    add_element(std::move(bpmSetting));
-
-    auto btnPadSettings = std::make_unique<UIButton>("Pad Settings", [&lcd]()
-    {
-        lcd.navigate("pad_settings");
-    });
-    add_element(std::move(btnPadSettings));
-}
-
-bool SettingsScreen::on_custom_event(uint32_t event)
-{
-    return false;
+    ui_button_config_t btnPadSettings{
+        .text = "Pad Settings",
+        .callback = [&graphics_manager]
+        {
+            graphics_manager.navigate("pad_settings");
+        }
+    };
+    add_element(std::make_unique<UIButton>(btnPadSettings));
 }

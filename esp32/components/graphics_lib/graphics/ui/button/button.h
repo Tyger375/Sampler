@@ -16,7 +16,7 @@ struct UIButton : UIElement
 private:
     ui_button_config_t config;
 public:
-    explicit UIButton(const ui_button_config_t&);
+    explicit UIButton(ui_button_config_t);
 
     std::string render(bool) override;
     bool on_event(graphics_event_t) override;

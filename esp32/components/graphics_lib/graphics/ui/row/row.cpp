@@ -1,30 +1,53 @@
 #include "row.h"
 
-/*
 void UIRow::add_element(graphics_element_t element)
 {
     elements.push_back(std::move(element));
 }
 
-std::string UIRow::render()
+std::string UIRow::render(const bool selected)
 {
     std::string text = (selected ? ">" : "");
 
     if (offset < elements.size())
     {
-        text += elements[offset]->render();
+        text += elements[offset]->render(focus);
         text += " ";
     }
     if (offset + 1 < elements.size())
     {
-        text += elements[offset + 1]->render();
+        text += elements[offset + 1]->render(false);
     }
 
     return text.substr(0, 16);
 }
 
-bool UIRow::on_event(graphics_event_t event)
+bool UIRow::on_event(const graphics_event_t event)
 {
+    switch (event)
+    {
+    case EVENT_CLICK:
+        focus = true;
+        elements[offset]->on_event(event);
+        return true;
+    case EVENT_BACK:
+        if (focus)
+        {
+            focus = false;
+            return true;
+        }
+        return false;
+    case EVENT_SCROLL_RIGHT:
+        offset = std::min(offset + 1, elements.size() - 1);
+        return false;
+    case EVENT_SCROLL_LEFT:
+        offset = std::max(offset - 1, 0U);
+        return false;
+    default:
+        return UIElement::on_event(event);
+    }
+    /*
+     * OLD IMPLEMENTATION
     if (event == EVENT_ON_NAVIGATE)
     {
         elements[offset]->on_event(EVENT_UNSELECT);
@@ -79,6 +102,6 @@ bool UIRow::on_event(graphics_event_t event)
         elements[focus]->on_event(EVENT_SELECT);
         return true;
     }
+    */
     return UIElement::on_event(event);
 }
-*/

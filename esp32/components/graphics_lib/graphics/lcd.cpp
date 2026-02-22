@@ -1,8 +1,9 @@
+/*
+ * DEPRECATED
 #include "lcd.h"
 #include "esp_log.h"
 #include "driver/i2c_types.h"
 
-/*
 void lcd::navigate_screen(Screen* screen)
 {
     if (current_screen != nullptr)

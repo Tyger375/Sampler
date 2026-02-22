@@ -4,10 +4,11 @@
 
 void GraphicsManager::navigate_screen(screen_t screen)
 {
-    // TODO: send destroy event
+    if (current_screen != nullptr)
+        current_screen->on_end();
     current_screen = std::move(screen);
 
-    // TODO: send start event
+    current_screen->on_start();
 }
 
 void GraphicsManager::load_screen(const std::string& id, const screen_factory_t& factory)
@@ -42,6 +43,26 @@ void GraphicsManager::navigate(const std::string& id)
     navigate_screen(screen_factories[id](*this));
 }
 
+void GraphicsManager::navigate_back()
+{
+    if (backstack.empty())
+    {
+        ESP_LOGE(TAG, "Backstack is empty");
+        return;
+    }
+
+    auto id = backstack.back();
+    backstack.pop_back();
+
+    if (!screen_factories.contains(id))
+    {
+        ESP_LOGE(TAG, "Factory for screen %s does not exist", id.c_str());
+        return;
+    }
+
+    navigate_screen(screen_factories[id](*this));
+}
+
 void GraphicsManager::update() const
 {
     const auto rows = current_screen->render(2);
@@ -70,6 +91,10 @@ void GraphicsManager::send_event(graphics_event_t event)
         break;
     case EVENT_CLICK:
         current_screen->on_click();
+        break;
+    case EVENT_BACK:
+        if (!current_screen->on_back())
+            navigate_back();
         break;
     default:
         {

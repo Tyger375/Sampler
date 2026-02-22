@@ -30,9 +30,9 @@ idf_component_register(SRCS
         screens/home/home.cpp
         screens/home/home.h
 
-#        screens/settings/settings.cpp
-#        screens/settings/settings.h
-#
+        screens/settings/settings.cpp
+        screens/settings/settings.h
+
 #        screens/pad_settings/pad_settings.cpp
 #        screens/pad_settings/pad_settings.h
 #

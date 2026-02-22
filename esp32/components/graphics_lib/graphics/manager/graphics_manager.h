@@ -31,6 +31,7 @@ public:
     void install_driver(graphics_driver_t);
 
     void navigate(const std::string&);
+    void navigate_back();
 
     void update() const;
 

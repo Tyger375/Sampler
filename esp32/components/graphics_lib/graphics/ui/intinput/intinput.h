@@ -1,34 +1,32 @@
 #ifndef SAMPLER_INTINPUT_H
 #define SAMPLER_INTINPUT_H
 
-/*
 #include <functional>
 #include "../element.h"
+
+struct ui_intinput_config_t
+{
+    std::string text;
+    std::function<std::string(int)> customFormat;
+    std::function<int(int)> onChange;
+    std::function<void(int)> onDone;
+};
 
 struct UIIntInput : UIElement
 {
 private:
+    bool focus = false;
+
     int old_value{};
-    std::function<void(int)> onDone;
-public:
-    std::function<std::string(int)> customFormat;
-
-    std::string label;
     int value{};
-    int maxValue{};
-    int minValue{};
+    ui_intinput_config_t config;
+public:
+    static ui_intinput_config_t defaultConfig();
 
-    explicit UIIntInput(std::function<void(int)> onDone)
-    {
-        this->onDone = std::move(onDone);
-        this->customFormat = [](const int val) {
-            return std::to_string(val);
-        };
-    }
+    UIIntInput(ui_intinput_config_t, int);
 
-    std::string render() override;
+    std::string render(bool) override;
     bool on_event(graphics_event_t) override;
 };
-*/
 
 #endif //SAMPLER_INTINPUT_H

@@ -20,17 +20,25 @@ void Screen::on_scroll(const bool direction)
         }
         else
         {
-            row_offset = std::max(row_offset - 1, 0U);
+            if (row_offset == 0) return;
+            row_offset--;
         }
     }
 }
 
 void Screen::on_click()
 {
-    if (elements[row_offset]->on_event(EVENT_CLICK))
+    focus = elements[row_offset]->on_event(EVENT_CLICK);
+}
+
+bool Screen::on_back()
+{
+    if (focus)
     {
-        focus = true;
+        focus = false;
+        return elements[row_offset]->on_event(EVENT_BACK);
     }
+    return false;
 }
 
 /*
