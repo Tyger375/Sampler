@@ -15,7 +15,7 @@ static void IRAM_ATTR selector_clk_isr_handler(void* arg)
 
     const selector_event_t event = clk == data ? ROTATION_LEFT : ROTATION_RIGHT;
     BaseType_t high_priority_task_woken = pdFALSE;
-    if (xQueueSendFromISR(*self->config->events, &event, &high_priority_task_woken))
+    if (xQueueSendFromISR(self->config->events, &event, &high_priority_task_woken))
     {
         self->last_isr = now;
     }
@@ -36,7 +36,7 @@ static void IRAM_ATTR selector_btn_isr_handler(void* arg)
 
     const selector_event_t event = btn == 0 ? BUTTON_PRESSED : BUTTON_RELEASED;
     BaseType_t high_priority_task_woken = pdFALSE;
-    if (xQueueSendFromISR(*self->config->events, &event, &high_priority_task_woken))
+    if (xQueueSendFromISR(self->config->events, &event, &high_priority_task_woken))
     {
         self->last_isr_btn = now;
     }

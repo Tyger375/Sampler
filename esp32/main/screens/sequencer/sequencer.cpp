@@ -1,51 +1,177 @@
 #include "sequencer.h"
-
 #include <esp_log.h>
-#include <graphics_test/ui/button/button.h>
+#include <graphics/ui/button/button.h>
+#include <graphics/ui/checkbox/checkbox.h>
+#include <graphics/ui/text/text.h>
 
 #include "../screens.h"
-#include <graphics_test/ui/checkbox/checkbox.h>
-#include <graphics_test/ui/text/text.h>
 #include <pads/pads.h>
 #include <quantizer/quantizer.h>
 #include <sequencer/sequencer.h>
 
-void create_sequencer_screen(lcd& lcd)
+screen_t create_sequencer_screen(GraphicsManager& graphics_manager)
 {
-    lcd.load_screen(std::make_unique<SequencerScreen>());
+    return std::make_unique<SequencerScreen>(graphics_manager);
 }
 
-SequencerScreen::SequencerScreen() : Screen("sequencer")
+SequencerScreen::SequencerScreen(GraphicsManager&) : Screen("sequencer")
 {
-    on_start();
+    sequencer_page();
 }
 
-void SequencerScreen::on_start()
+void SequencerScreen::sequencer_page()
 {
-    focus = -1;
+    row_offset = 0;
+    pageFocus = -1;
     elements.clear();
 
-    elements.push_back(std::make_unique<UIText>("Sequencer"));
-    auto enableSequencer = std::make_unique<UICheckBox>([](const bool checked) {
-        Sequencer::instance().enable = checked;
-    });
-    enableSequencer->checked = Sequencer::instance().enable;
-    enableSequencer->label = "Enable";
-    elements.push_back(std::move(enableSequencer));
+    add_element(std::make_unique<UIText>("Sequencer"));
 
-    elements.push_back(std::make_unique<UIButton>("Start", []{
-        auto& quantizer = Quantizer::instance();
-        quantizer.steps = 15;
-        quantizer.ticks = 5;
-        ESP_LOGI("Sequencer", "Restarting");
-    }));
+    ui_checkbox_config_t enableSequencer{
+        .label = "Enable",
+        .onChange = [](const bool checked)
+        {
+            Sequencer::instance().enable = checked;
+            return checked;
+        }
+    };
+    add_element(std::make_unique<UICheckBox>(enableSequencer, Sequencer::instance().enable));
 
-    elements.push_back(std::make_unique<UIButton>("Tracks", [this]
-    {
-        show_tracks();
-    }));
+    ui_button_config_t startBtn{
+        .text = "Start",
+        .callback = []
+        {
+            auto& quantizer = Quantizer::instance();
+            quantizer.steps = 15;
+            quantizer.ticks = 5;
+            ESP_LOGI("Sequencer", "Restarting");
+        }
+    };
+    add_element(std::make_unique<UIButton>(startBtn));
+
+    ui_button_config_t tracksBtn{
+        .text = "Tracks",
+        .callback = [this]
+        {
+            show_tracks();
+        }
+    };
+    add_element(std::make_unique<UIButton>(tracksBtn));
 }
 
+void SequencerScreen::show_tracks()
+{
+    row_offset = 0;
+    pageFocus = 0;
+    PadsManager::instance().enable = true;
+    elements.clear();
+
+    elements.push_back(std::make_unique<UIText>("Tracks"));
+    ui_button_config_t addTrackBtn{
+        .text = "Add",
+        .callback = [this]
+        {
+            Sequencer::instance().tracks.push_back({
+                .loops = 1,
+                .resolution = SEQ_RES_HALF_BEAT,
+                .note = 60,
+                .trigger = false,
+                .triggers = {}
+            });
+            show_tracks();
+        }
+    };
+    elements.push_back(std::make_unique<UIButton>(addTrackBtn));
+
+    //ESP_LOGI("TRACKS", "%i", Sequencer::instance().tracks.size());
+    for (size_t i = 0; i < Sequencer::instance().tracks.size(); ++i)
+    {
+        ui_button_config_t navTrackBtn{
+            .text = std::to_string(i),
+            .callback = [this, i]
+            {
+                edit_track(i);
+            }
+        };
+        elements.push_back(std::make_unique<UIButton>(navTrackBtn));
+    }
+}
+
+void SequencerScreen::edit_track(const uint16_t index)
+{
+    pageFocus = 1;
+    row_offset = 0;
+    PadsManager::instance().enable = false;
+    editingTrack = index;
+    elements.clear();
+
+    elements.push_back(std::make_unique<UIText>("Track " + std::to_string(editingTrack)));
+
+    ui_button_config_t deleteBtn{
+        .text = "Delete",
+        .callback = [this]
+        {
+            Sequencer::instance().tracks.erase(Sequencer::instance().tracks.begin() + editingTrack);
+            show_tracks();
+        }
+    };
+    elements.push_back(std::make_unique<UIButton>(deleteBtn));
+}
+
+bool SequencerScreen::on_back()
+{
+    if (pageFocus >= 0)
+    {
+        if (Screen::on_back())
+        {
+            return true;
+        }
+
+        switch (pageFocus)
+        {
+        case 0:
+            sequencer_page();
+            break;
+        case 1:
+            show_tracks();
+            break;
+        default: break;
+        }
+        return true;
+    }
+
+    return Screen::on_back();
+}
+
+bool SequencerScreen::on_custom_event(uint32_t event)
+{
+    if (pageFocus == 1)
+    {
+        const uint8_t channel = event & 0b111;
+        const bool long_press = (event & 0b1000) > 0;
+
+        if (!long_press)
+        {
+            ESP_LOGI("SEQUENCER", "PRESSED %u", channel);
+            auto& sequencer = Sequencer::instance();
+            auto& triggers = sequencer.tracks[editingTrack].triggers;
+            auto item = std::ranges::find(triggers, channel);
+            if (item != triggers.end())
+            {
+                ESP_LOGI("SEQUENCER", "REMOVING TRIGGER");
+                triggers.erase(item);
+            } else
+            {
+                ESP_LOGI("SEQUENCER", "ADDING TRIGGER");
+                triggers.push_back(channel);
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+/*
 void SequencerScreen::show_tracks()
 {
     PadsManager::instance().enable = true;
@@ -136,3 +262,4 @@ bool SequencerScreen::on_custom_event(uint32_t event)
     }
     return false;
 }
+*/

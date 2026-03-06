@@ -65,6 +65,12 @@ void GraphicsManager::navigate_back()
 
 void GraphicsManager::update() const
 {
+    if (current_screen == nullptr)
+    {
+        ESP_LOGE(TAG, "Current screen is null");
+        return;
+    }
+
     const auto rows = current_screen->render(2);
 
     for (auto& driver : drivers)
@@ -101,4 +107,15 @@ void GraphicsManager::send_event(graphics_event_t event)
             ESP_LOGE(TAG, "Unknown event type");
         } break;
     }
+}
+
+bool GraphicsManager::send_custom_event(const uint32_t event) const
+{
+    if (current_screen == nullptr)
+    {
+        ESP_LOGE(TAG, "Current screen is null");
+        return false;
+    }
+
+    return current_screen->on_custom_event(event);
 }

@@ -7,8 +7,11 @@ idf_component_register(SRCS
         usb/usb.cpp
         usb/usb.h
 
-        settings/settings_manager.cpp
-        settings/settings_manager.h
+        settings/config/config_component.cpp
+        settings/config/config_component.h
+
+        settings/pads/pads_component.cpp
+        settings/pads/pads_component.h
 
         quantizer/quantizer.cpp
         quantizer/quantizer.h
@@ -33,15 +36,16 @@ idf_component_register(SRCS
         screens/settings/settings.cpp
         screens/settings/settings.h
 
-#        screens/pad_settings/pad_settings.cpp
-#        screens/pad_settings/pad_settings.h
-#
-#        screens/sequencer/sequencer.cpp
-#        screens/sequencer/sequencer.h
+        screens/pad_settings/pad_settings.cpp
+        screens/pad_settings/pad_settings.h
+
+        screens/sequencer/sequencer.cpp
+        screens/sequencer/sequencer.h
 
         INCLUDE_DIRS "."
         REQUIRES
             graphics_lib
+            settings_lib
             nvs_flash
             esp_driver_i2c
             esp_driver_gptimer

@@ -1,28 +1,45 @@
 #include "pad_settings.h"
 
 #include <esp_log.h>
-#include <graphics_test/ui/button/button.h>
-#include <graphics_test/ui/intinput/intinput.h>
-#include <graphics_test/ui/text/text.h>
+#include <graphics/ui/intinput/intinput.h>
+#include <graphics/ui/text/text.h>
 #include <pads/pads.h>
 #include <utils/utils.h>
-
 #include "../screens.h"
 
-void create_pad_settings_screen(lcd& lcd)
+screen_t create_pad_settings_screen(GraphicsManager& /*graphics_manager*/)
 {
-    auto screen = std::make_unique<PadSettingsScreen>();
-    lcd.load_screen(std::move(screen));
+    return std::make_unique<PadSettingsScreen>();
 }
 
 PadSettingsScreen::PadSettingsScreen() : Screen("pad_settings")
+{}
+
+void PadSettingsScreen::on_start()
 {
+    Screen::on_start();
+
     select_pad();
+}
+
+bool PadSettingsScreen::on_custom_event(const uint32_t event)
+{
+    const uint8_t channel = event & 0b111;
+    const bool long_press = (event & 0b1000) > 0;
+
+    if (!long_press && pageFocus < 0)
+    {
+        pageFocus = channel;
+        pad_selected();
+        return true;
+    }
+
+    return false;
 }
 
 void PadSettingsScreen::select_pad()
 {
-    focus = -1;
+    pageFocus = -1;
     elements.clear();
 
     add_element(std::make_unique<UIText>("Press button"));
@@ -30,16 +47,16 @@ void PadSettingsScreen::select_pad()
 
 void PadSettingsScreen::pad_selected()
 {
-    if (focus < 0) return;
-    if (elements.empty()) return;
+    if (pageFocus < 0) return;
 
-    auto* title = (UIText*)elements[0].get();
-    if (title == nullptr) return;
-    title->setText("PAD: " + std::to_string(focus));
+    elements.clear();
 
+    elements.push_back(std::make_unique<UIText>("PAD: " + std::to_string(focus)));
+
+    /*
     auto note = std::make_unique<UIIntInput>([this](const int value)
     {
-        if (focus < 0) return;
+        if (pageFocus < 0) return;
 
         PadsManager::instance().pads_settings[focus].note = value;
     });
@@ -68,18 +85,20 @@ void PadSettingsScreen::pad_selected()
 
         select_pad();
     }));
+    */
 }
 
+/*
 bool PadSettingsScreen::on_event(graphics_event_t event, uint16_t element)
 {
     if (focus >= 0)
     {
-        /*if (event == EVENT_FOCUS)
-        {
-            ESP_LOGI("PadSettingsScreen", "Pad configured");
-            select_pad();
-            return false;
-        }*/
+//        if (event == EVENT_FOCUS)
+//        {
+//            ESP_LOGI("PadSettingsScreen", "Pad configured");
+//            select_pad();
+//            return false;
+//        }
         if (event == EVENT_BACK)
         {
             select_pad();
@@ -104,3 +123,4 @@ bool PadSettingsScreen::on_custom_event(uint32_t event)
     return false;
     //ESP_LOGI("PadSettingsScreen", "%u %i", channel, long_press);
 }
+*/

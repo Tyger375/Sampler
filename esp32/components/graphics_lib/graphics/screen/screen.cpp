@@ -41,6 +41,11 @@ bool Screen::on_back()
     return false;
 }
 
+bool Screen::on_custom_event(uint32_t)
+{
+    return false;
+}
+
 /*
 const std::vector<std::unique_ptr<UIElement>>& Screen::get()
 {

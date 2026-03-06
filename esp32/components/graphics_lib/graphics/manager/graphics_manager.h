@@ -36,6 +36,13 @@ public:
     void update() const;
 
     void send_event(graphics_event_t);
+
+    /**
+     *
+     * @param event custom event
+     * @return Should update rendering?
+     */
+    bool send_custom_event(uint32_t event) const;
 };
 
 #endif //GRAPHICS_GRAPHICS_MANAGER_H

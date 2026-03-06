@@ -8,7 +8,7 @@ class Screen
 {
 protected:
     graphics_elements_t elements;
-    size_t row_offset{};
+    size_t row_offset = 0;
     bool focus = false;
 public:
     const std::string id;
@@ -22,6 +22,7 @@ public:
 
     virtual void on_start()
     {
+        row_offset = 0;
         for (const auto& ui_element : elements)
         {
             ui_element->on_event(EVENT_SCREEN_START);
@@ -39,6 +40,8 @@ public:
     virtual void on_scroll(bool);
     virtual void on_click();
     virtual bool on_back();
+
+    virtual bool on_custom_event(uint32_t);
     /*
 
     const graphics_elements_t& get();

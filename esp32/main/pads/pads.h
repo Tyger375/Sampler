@@ -4,6 +4,7 @@
 #include <ads1015/ads1015.hpp>
 #include "FreeRTOS.h"
 #include <atomic>
+#include <soc/gpio_num.h>
 
 typedef enum : uint8_t
 {
@@ -51,6 +52,16 @@ typedef struct
     pad_state_t state;
 } drum_pad_t;
 
+typedef struct
+{
+    i2c_port_num_t port_num;
+    gpio_num_t sda_num;
+    gpio_num_t scl_num;
+
+    uint16_t adc1_addr;
+    uint16_t adc2_addr;
+} pads_manager_config_t;
+
 class PadsManager
 {
 public:
@@ -59,6 +70,8 @@ public:
         static PadsManager padsManager;
         return padsManager;
     }
+
+    void init_adc(const pads_manager_config_t& config);
 
     PadsManager(const PadsManager&) = delete;
     void operator=(const PadsManager&) = delete;
@@ -75,8 +88,8 @@ public:
     drum_pad_t pads_settings[8]{};
     TaskHandle_t padsSTaskHandle = nullptr;
 private:
-    ads1015* ads1;
-    ads1015* ads2;
+    ads1015* ads1 = nullptr;
+    ads1015* ads2 = nullptr;
 
     PadsManager();
 };

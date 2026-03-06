@@ -140,11 +140,14 @@ PadsManager::PadsManager()
         pad.peak = 0;
         pad.timer_start = 0;
     }
+}
 
+void PadsManager::init_adc(const pads_manager_config_t& config)
+{
     i2c_master_bus_config_t bus_config = {};
-    bus_config.i2c_port = I2C_NUM_0;
-    bus_config.sda_io_num = GPIO_NUM_12;
-    bus_config.scl_io_num = GPIO_NUM_11;
+    bus_config.i2c_port = config.port_num;
+    bus_config.sda_io_num = config.sda_num;
+    bus_config.scl_io_num = config.scl_num;
     bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
     bus_config.glitch_ignore_cnt = 7;
     bus_config.flags.enable_internal_pullup = false;
@@ -153,8 +156,8 @@ PadsManager::PadsManager()
 
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &pads_bus_handle));
 
-    ads1 = new ads1015(pads_bus_handle, 0x48);
-    ads2 = new ads1015(pads_bus_handle, 0x49);
+    ads1 = new ads1015(pads_bus_handle, config.adc1_addr);
+    ads2 = new ads1015(pads_bus_handle, config.adc2_addr);
 
     constexpr ads1015_config_t ads_cfg = {
         .mux_config = MUX_0,
@@ -175,6 +178,12 @@ PadsManager::PadsManager()
 
 void PadsManager::start_task()
 {
+    if (ads1 == nullptr || ads2 == nullptr)
+    {
+        ESP_LOGE("PadsManager", "Manager was not started");
+        return;
+    }
+
     static input_scan_packet packet{
         .ads1 = ads1,
         .ads2 = ads2

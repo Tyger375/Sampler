@@ -10,10 +10,11 @@
 #include "usb/usb.h"
 #include "quantizer/quantizer.h"
 #include "selector/selector.h"
-#include "settings/settings_manager.h"
 #include "screens/screens.h"
-
 #include <graphics/manager/graphics_manager.h>
+#include <settings/manager.h>
+#include <ArduinoJson.hpp>
+#include <settings/config/config_component.h>
 
 void sequencer_task(void* /*pvParameters*/) {
     const auto& quantizer = Quantizer::instance();
@@ -68,20 +69,71 @@ void drumpad_task(void* /*pvParameters*/)
     }
 }
 
+QueueHandle_t settings_updates = nullptr;
+
 void settings_task(void* /*pvParameters*/)
 {
     ESP_LOGI("SAMPLER", "Settings Task!");
-    const auto& settings = SettingsManager::instance();
+    auto& settings = SettingsManager::instance();
     auto& quantizer = Quantizer::instance();
 
-    settings_update_t update;
+    uint32_t update;
     while (true)
     {
-        if (xQueueReceive(settings.updates_queue, &update, portMAX_DELAY) == pdTRUE)
+        if (xQueueReceive(settings_updates, &update, portMAX_DELAY) == pdTRUE)
         {
-            if (update == UPDATE_BPM)
+            if (update == EVENT_UPDATE_BPM)
             {
-                quantizer.start(settings.bpm);
+                const auto config = settings.get_component<ConfigComponent>("config");
+                quantizer.start(config->bpm());
+            }
+        }
+    }
+}
+
+static TaskHandle_t vendor_task_h = nullptr;
+
+extern "C" void tud_vendor_rx_cb(uint8_t, const uint8_t*, uint16_t)
+{
+    if (vendor_task_h)
+    {
+        xTaskNotifyGive(vendor_task_h);
+    }
+}
+
+void on_vendor_cmd(const std::string& cmd)
+{
+    if (cmd == "ECHO")
+    {
+        tud_vendor_write("ECHO\n", 5);
+        tud_vendor_write_flush();
+        return;
+    }
+}
+
+void read_vendor_task(void* /*pvParameters*/) {
+    vendor_task_h = xTaskGetCurrentTaskHandle();
+    uint8_t buffer[64];
+
+    std::string message;
+
+    while (true) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        while (tud_vendor_available()) {
+            uint32_t count = tud_vendor_read(buffer, sizeof(buffer));
+            if (count == 0) continue;
+
+            message.append(reinterpret_cast<char*>(buffer), count);
+
+            size_t pos;
+            while ((pos = message.find("\n")) != std::string::npos)
+            {
+                std::string cmd = message.substr(0, pos);
+                message.erase(0, pos + 1);
+
+                ESP_LOGI("Vendor", "Received: %s", cmd.c_str());
+                on_vendor_cmd(cmd);
             }
         }
     }
@@ -91,9 +143,21 @@ extern "C" void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     USB::init();
-    USB::drain_rx();
 
-    if (!SettingsManager::instance().load())
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    USB::drain_rx();
+    xTaskCreate(
+        read_vendor_task,
+        "vendor_rx",
+        4096,
+        nullptr,
+        4,
+        &vendor_task_h
+    );
+
+    auto& settings = SettingsManager::instance();
+    if (!settings.init())
     {
         ESP_LOGE("SettingsManager", "Failed to load SettingsManager");
         while (true)
@@ -101,6 +165,10 @@ extern "C" void app_main()
             vTaskDelay(10);
         }
     }
+
+    settings_updates = xQueueCreate(10, sizeof(uint32_t));
+    settings.add_component(std::make_unique<ConfigComponent>(settings_updates));
+
     xTaskCreate(settings_task, "settings", 2048, nullptr, 10, nullptr);
 
     static i2c_master_bus_handle_t i2c_bus_handle = nullptr;
@@ -116,23 +184,16 @@ extern "C" void app_main()
 
     auto& quantizer = Quantizer::instance();
     auto& sequencer = Sequencer::instance();
-    /*sequencer.tracks.push_back({
-        1,
-        SEQ_RES_BEAT,
-        25,
-        false,
-        {2}
-    });
-    sequencer.tracks.push_back({
-        2,
-        SEQ_RES_HALF_BEAT,
-        24,
-        false,
-        {0, 8, 10}
-    });*/
-    sequencer.set_loops_num(4);
+    (void)sequencer;
 
     auto& padsManager = PadsManager::instance();
+    padsManager.init_adc({
+        .port_num = I2C_NUM_0,
+        .sda_num = GPIO_NUM_12,
+        .scl_num = GPIO_NUM_11,
+        .adc1_addr = 0x48,
+        .adc2_addr = 0x49
+    });
 
     xTaskCreatePinnedToCore(
         sequencer_task,
@@ -156,26 +217,21 @@ extern "C" void app_main()
 
     GraphicsManager graphics_manager;
     graphics_manager.install_driver(std::make_unique<lcd1602_driver>(i2c_bus_handle, 0x27));
-    graphics_manager.install_driver(std::make_unique<logger_driver>());
+    //graphics_manager.install_driver(std::make_unique<logger_driver>());
 
     graphics_manager.load_screen("home", create_home_screen);
     graphics_manager.load_screen("settings", create_settings_screen);
+    graphics_manager.load_screen("sequencer", create_sequencer_screen);
+    graphics_manager.load_screen("pad_settings", create_pad_settings_screen);
+
     graphics_manager.navigate("home");
-    /* Graphics */
-    /*lcd lcd(i2c_bus_handle, 0x27);
-    create_home_screen(lcd);
-    create_settings_screen(lcd);
-    create_pad_settings_screen(lcd);
-    create_sequencer_screen(lcd);
-    lcd.navigate("home");
-    lcd.render();*/
 
     QueueHandle_t selector_events = xQueueCreate(10, sizeof(selector_event_t));
     selector_config_t selector_config = {
         .clk_gpio = GPIO_NUM_8,
         .data_gpio = GPIO_NUM_7,
         .btn_gpio = GPIO_NUM_9,
-        .events = &selector_events
+        .events = selector_events
     };
     Selector selector(&selector_config);
 
@@ -192,10 +248,11 @@ extern "C" void app_main()
 
     uint32_t press_start_time = 0;
     uint32_t pads_press_start_time[8] = {};
-    constexpr uint32_t LONG_PRESS_THRESHOLD_MS = 500;
 
+    graphics_manager.update();
     while (true)
     {
+        constexpr uint32_t LONG_PRESS_THRESHOLD_MS = 500;
         QueueSetMemberHandle_t input = xQueueSelectFromSet(graphics_inputs_events, portMAX_DELAY);
 
         if (input == selector_events)
@@ -231,6 +288,25 @@ extern "C" void app_main()
         } else if (input == padsManager.pads_input_events)
         {
             xQueueReceive(padsManager.pads_input_events, &pad_input_event, 0);
+
+            const auto channel = pad_input_event.channel;
+
+            if (pad_input_event.pressed)
+            {
+                pads_press_start_time[channel] = esp_log_timestamp();
+                continue;
+            } else
+            {
+                const uint32_t duration = esp_log_timestamp() - pads_press_start_time[channel];
+                uint32_t custom_event = 0 | (channel & 0b111);
+
+                if (duration >= LONG_PRESS_THRESHOLD_MS)
+                {
+                    custom_event |= (1 << 3);
+                }
+                if (!graphics_manager.send_custom_event(custom_event))
+                    continue;
+            }
         }
 
         graphics_manager.update();

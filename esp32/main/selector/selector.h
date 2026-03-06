@@ -10,7 +10,7 @@ typedef struct
     gpio_num_t clk_gpio;
     gpio_num_t data_gpio;
     gpio_num_t btn_gpio;
-    QueueHandle_t* events;
+    QueueHandle_t events;
 } selector_config_t;
 
 enum selector_event_t

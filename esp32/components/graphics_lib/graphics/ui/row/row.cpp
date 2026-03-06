@@ -1,5 +1,7 @@
 #include "row.h"
 
+#include <esp_log.h>
+
 void UIRow::add_element(graphics_element_t element)
 {
     elements.push_back(std::move(element));
@@ -27,8 +29,13 @@ bool UIRow::on_event(const graphics_event_t event)
     switch (event)
     {
     case EVENT_CLICK:
-        focus = true;
-        elements[offset]->on_event(event);
+        if (!focus)
+        {
+            focus = true;
+        } else
+        {
+            elements[offset]->on_event(event);
+        }
         return true;
     case EVENT_BACK:
         if (focus)

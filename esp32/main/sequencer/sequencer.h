@@ -39,8 +39,10 @@ public:
     void step_trigger_on(uint8_t);
     void step_trigger_off(uint8_t);
 
-    void set_loops_num(const uint8_t loops)
+    void set_loops_num(uint8_t loops)
     {
+        if (loops == 0)
+            loops = 1;
         loops_num = loops;
     }
 private:
