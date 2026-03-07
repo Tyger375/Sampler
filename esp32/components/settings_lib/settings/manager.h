@@ -2,8 +2,9 @@
 #define SAMPLER_MANAGER_H
 
 #include <ArduinoJson.hpp>
+#include <esp_log.h>
 #include <unordered_map>
-#include "group/group.h"
+#include "component/component.h"
 
 namespace SettingsUtils
 {
@@ -49,6 +50,7 @@ T* SettingsManager::get_component(const std::string& id)
 {
     if (!components.contains(id))
     {
+        ESP_LOGE("SettingsManager", "Requested component (%s) does not exist", id.c_str());
         return nullptr;
     }
     return static_cast<T*>(components[id].get());

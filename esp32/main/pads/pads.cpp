@@ -1,4 +1,8 @@
 #include "pads.h"
+
+#include <settings/manager.h>
+#include <settings/pads/pads_component.h>
+
 #include "esp_log.h"
 #include "esp_log_timestamp.h"
 #include "ads1015/ads1015.hpp"
@@ -129,12 +133,16 @@ PadsManager::PadsManager()
 
     //padsSTaskHandle =
 
-    uint8_t note = 0x60;
-    for (auto& pad : pads_settings)
+    const auto padsComponent = SettingsManager::instance().get_component<PadsComponent>("pads");
+
+    for (size_t i = 0; i < 8; ++i)
     {
-        pad.threshold = 50;
-        pad.press_type = ONE_SHOT;
-        pad.note = note++;
+        auto& pad = pads_settings[i];
+        const auto config = padsComponent->get_pad_config(i);
+
+        pad.threshold = config.threshold;
+        pad.press_type = config.press_type;
+        pad.note = config.note;
 
         pad.state = PAD_IDLE;
         pad.peak = 0;

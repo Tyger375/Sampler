@@ -2,20 +2,17 @@
 #define SAMPLER_CONFIG_COMPONENT_H
 
 #include <settings/manager.h>
-#include <esp_log.h>
 
 constexpr uint32_t EVENT_UPDATE_BPM = 1;
 
 class ConfigComponent : public SettingsComponent
 {
     ArduinoJson::JsonDocument values;
-    QueueHandle_t updates = nullptr;
-
     std::mutex mut;
 
     static constexpr auto filename = "/data/config.json";
 public:
-    ConfigComponent(QueueHandle_t updates);
+    ConfigComponent();
 
     void on_load() override;
 

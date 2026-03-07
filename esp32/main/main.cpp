@@ -15,8 +15,9 @@
 #include <settings/manager.h>
 #include <ArduinoJson.hpp>
 #include <settings/config/config_component.h>
+#include <settings/pads/pads_component.h>
 
-void sequencer_task(void* /*pvParameters*/) {
+[[noreturn]] void sequencer_task(void* /*pvParameters*/) {
     const auto& quantizer = Quantizer::instance();
     auto& sequencer = Sequencer::instance();
 
@@ -42,7 +43,7 @@ void sequencer_task(void* /*pvParameters*/) {
     }
 }
 
-void drumpad_task(void* /*pvParameters*/)
+[[noreturn]] void drumpad_task(void* /*pvParameters*/)
 {
     auto& padsManager = PadsManager::instance();
     pad_midi_event_t value;
@@ -69,9 +70,11 @@ void drumpad_task(void* /*pvParameters*/)
     }
 }
 
+/*
+TODO: delete this task
 QueueHandle_t settings_updates = nullptr;
 
-void settings_task(void* /*pvParameters*/)
+void settings_task(void*)
 {
     ESP_LOGI("SAMPLER", "Settings Task!");
     auto& settings = SettingsManager::instance();
@@ -90,6 +93,7 @@ void settings_task(void* /*pvParameters*/)
         }
     }
 }
+*/
 
 static TaskHandle_t vendor_task_h = nullptr;
 
@@ -111,7 +115,7 @@ void on_vendor_cmd(const std::string& cmd)
     }
 }
 
-void read_vendor_task(void* /*pvParameters*/) {
+[[noreturn]] void read_vendor_task(void* /*pvParameters*/) {
     vendor_task_h = xTaskGetCurrentTaskHandle();
     uint8_t buffer[64];
 
@@ -121,13 +125,13 @@ void read_vendor_task(void* /*pvParameters*/) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         while (tud_vendor_available()) {
-            uint32_t count = tud_vendor_read(buffer, sizeof(buffer));
+            const uint32_t count = tud_vendor_read(buffer, sizeof(buffer));
             if (count == 0) continue;
 
             message.append(reinterpret_cast<char*>(buffer), count);
 
             size_t pos;
-            while ((pos = message.find("\n")) != std::string::npos)
+            while ((pos = message.find('\n')) != std::string::npos)
             {
                 std::string cmd = message.substr(0, pos);
                 message.erase(0, pos + 1);
@@ -139,7 +143,7 @@ void read_vendor_task(void* /*pvParameters*/) {
     }
 }
 
-extern "C" void app_main()
+extern "C" [[noreturn]] void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     USB::init();
@@ -166,11 +170,16 @@ extern "C" void app_main()
         }
     }
 
-    settings_updates = xQueueCreate(10, sizeof(uint32_t));
-    settings.add_component(std::make_unique<ConfigComponent>(settings_updates));
+    settings.add_component(std::make_unique<ConfigComponent>());
+    settings.add_component(std::make_unique<PadsComponent>());
 
-    xTaskCreate(settings_task, "settings", 2048, nullptr, 10, nullptr);
+    //xTaskCreate(settings_task, "settings", 2048, nullptr, 10, nullptr);
 
+    /*
+     * I2C bus for:
+     *  - LCD
+     *  - Buttons' LEDs
+     */
     static i2c_master_bus_handle_t i2c_bus_handle = nullptr;
     i2c_master_bus_config_t bus_config = {};
     bus_config.clk_source = I2C_CLK_SRC_DEFAULT;
@@ -182,6 +191,7 @@ extern "C" void app_main()
     bus_config.flags.enable_internal_pullup = true;
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &i2c_bus_handle));
 
+    //
     auto& quantizer = Quantizer::instance();
     auto& sequencer = Sequencer::instance();
     (void)sequencer;
@@ -215,6 +225,7 @@ extern "C" void app_main()
         1
     );
 
+    // Graphics
     GraphicsManager graphics_manager;
     graphics_manager.install_driver(std::make_unique<lcd1602_driver>(i2c_bus_handle, 0x27));
     //graphics_manager.install_driver(std::make_unique<logger_driver>());
@@ -226,6 +237,7 @@ extern "C" void app_main()
 
     graphics_manager.navigate("home");
 
+    // Hardware inputs
     QueueHandle_t selector_events = xQueueCreate(10, sizeof(selector_event_t));
     selector_config_t selector_config = {
         .clk_gpio = GPIO_NUM_8,
@@ -234,6 +246,7 @@ extern "C" void app_main()
         .events = selector_events
     };
     Selector selector(&selector_config);
+    (void)selector;
 
     /* Graphics task */
     QueueSetHandle_t graphics_inputs_events = xQueueCreateSet(10 + 64);
@@ -311,6 +324,7 @@ extern "C" void app_main()
 
         graphics_manager.update();
         /*
+        TODO: delete this code
         QueueSetMemberHandle_t input = xQueueSelectFromSet(graphics_inputs_events, portMAX_DELAY);
 
         if (input == selector_events)

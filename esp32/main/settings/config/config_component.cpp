@@ -1,10 +1,10 @@
 #include "config_component.h"
 
-ConfigComponent::ConfigComponent(const QueueHandle_t updates): SettingsComponent("config")
-{
-    this->updates = updates;
+#include <quantizer/quantizer.h>
 
-    values["bpm"] = 120;
+ConfigComponent::ConfigComponent(): SettingsComponent("config")
+{
+    set_bpm(120);
 }
 
 void ConfigComponent::on_load()
@@ -15,7 +15,11 @@ void ConfigComponent::on_load()
         SettingsUtils::save_json(filename, values);
     }
 
-    xQueueSend(updates, &EVENT_UPDATE_BPM, 0);
+    {
+        std::lock_guard lock(mut);
+        Quantizer::instance().start(values["bpm"]);
+    }
+    //xQueueSend(updates, &EVENT_UPDATE_BPM, 0);
 }
 
 int ConfigComponent::bpm() const
@@ -25,8 +29,11 @@ int ConfigComponent::bpm() const
 
 void ConfigComponent::set_bpm(const int bpm)
 {
-    std::lock_guard lock(mut);
-    values["bpm"] = bpm;
+    {
+        std::lock_guard lock(mut);
+        values["bpm"] = bpm;
+    }
+    Quantizer::instance().start(bpm);
 }
 
 void ConfigComponent::save()
@@ -42,6 +49,4 @@ void ConfigComponent::save()
         ESP_LOGE("ConfigComponent", "Failed to save file");
         return;
     }
-
-    xQueueSend(updates, &EVENT_UPDATE_BPM, 0);
 }
