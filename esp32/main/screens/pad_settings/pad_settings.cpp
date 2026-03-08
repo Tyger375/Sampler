@@ -82,18 +82,18 @@ void PadSettingsScreen::pad_selected()
 
     elements.clear();
 
-    add_element(std::make_unique<UIText>("PAD: " + std::to_string(pageFocus)));
+    add_element(std::make_unique<UIText>("PAD: " + std::to_string(pageFocus + 1)));
 
     ui_intinput_config_t noteInput{
         .text = "Note",
-        .customFormat = [](const int value)
+        .formatValue = [](const int value)
         {
             return Utils::int_to_note(value);
         },
         .onChange = [](int value)
         {
             if (value < 0) value = 0;
-            if (value > 127) value = 127;
+            if (value > Utils::MAX_MIDI_NOTE) value = Utils::MAX_MIDI_NOTE;
             return value;
         },
         .onDone = [this, padSettings](const int value)
@@ -104,6 +104,27 @@ void PadSettingsScreen::pad_selected()
         }
     };
     add_element(std::make_unique<UIIntInput>(noteInput, config.note));
+
+    ui_intinput_config_t channelInput{
+        .text = "Channel",
+        .formatValue = [](const int value)
+        {
+            return std::to_string(value + 1);
+        },
+        .onChange = [](int value)
+        {
+            if (value < 0) value = 0;
+            if (value > Utils::MAX_MIDI_CHANNELS) value = Utils::MAX_MIDI_CHANNELS;
+            return value;
+        },
+        .onDone = [this, padSettings](const int value)
+        {
+            if (pageFocus < 0 || pageFocus > 8) return;
+
+            padSettings->set_pad_channel(pageFocus, value);
+        }
+    };
+    add_element(std::make_unique<UIIntInput>(channelInput, config.channel));
 
     ui_button_config_t saveBtn{
         .text = "Save",

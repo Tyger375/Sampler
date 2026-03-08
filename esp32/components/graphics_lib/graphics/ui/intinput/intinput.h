@@ -7,7 +7,7 @@
 struct ui_intinput_config_t
 {
     std::string text;
-    std::function<std::string(int)> customFormat;
+    std::function<std::string(int)> formatValue;
     std::function<int(int)> onChange;
     std::function<void(int)> onDone;
 };

@@ -38,9 +38,12 @@ public:
     [[nodiscard]] pad_config_t get_pad_config(uint8_t index) const;
 
     void set_pad_note(uint8_t index, uint8_t note);
+    void set_pad_channel(uint8_t index, uint8_t channel);
 
     void on_load() override;
     void save() override;
+
+    std::string direct_read(const std::string& arg) override;
 };
 
 

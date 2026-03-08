@@ -35,7 +35,7 @@ SettingsScreen::SettingsScreen(GraphicsManager& graphics_manager) : Screen("sett
 
     ui_intinput_config_t bpmSettings{
         .text = "BPM",
-        .customFormat = [](const int value)
+        .formatValue = [](const int value)
         {
             return std::to_string(value);
         },

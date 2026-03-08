@@ -19,6 +19,11 @@ SequencerScreen::SequencerScreen(GraphicsManager&) : Screen("sequencer")
     sequencer_page();
 }
 
+uint8_t pad_to_seq(const uint8_t pad_index)
+{
+    return (pad_index / 2) + (pad_index % 2) * 4;
+}
+
 void SequencerScreen::sequencer_page()
 {
     row_offset = 0;
@@ -155,7 +160,10 @@ bool SequencerScreen::on_custom_event(uint32_t event)
             ESP_LOGI("SEQUENCER", "PRESSED %u", channel);
             auto& sequencer = Sequencer::instance();
             auto& triggers = sequencer.tracks[editingTrack].triggers;
-            auto item = std::ranges::find(triggers, channel);
+
+            const auto trigger = pad_to_seq(channel);
+            auto item = std::ranges::find(triggers, trigger);
+
             if (item != triggers.end())
             {
                 ESP_LOGI("SEQUENCER", "REMOVING TRIGGER");
@@ -163,7 +171,7 @@ bool SequencerScreen::on_custom_event(uint32_t event)
             } else
             {
                 ESP_LOGI("SEQUENCER", "ADDING TRIGGER");
-                triggers.push_back(channel);
+                triggers.push_back(trigger);
             }
         }
         return true;

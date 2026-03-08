@@ -26,9 +26,9 @@ ads1015_mux_config_t channel_to_mux_config(const uint8_t channel)
     }
 }
 
-void process_pad_physics(PadsManager& padsManager, const uint8_t channel, const uint16_t value)
+void process_pad_physics(PadsManager& padsManager, const uint8_t pad_index, const uint16_t value)
 {
-    drum_pad_t* pad = &padsManager.pads_settings[channel];
+    drum_pad_t* pad = &padsManager.pads_settings[pad_index];
     const uint32_t now = esp_log_timestamp();
 
     switch (pad->state)
@@ -55,7 +55,7 @@ void process_pad_physics(PadsManager& padsManager, const uint8_t channel, const 
 
                 const pad_midi_event_t midi_event =
                 {
-                    .channel = channel,
+                    .channel = pad->channel,
                     .note = pad->note,
                     .velocity = velocity,
                     .type = NOTE_ON
@@ -64,7 +64,7 @@ void process_pad_physics(PadsManager& padsManager, const uint8_t channel, const 
                 xQueueSend(padsManager.pads_midi_events, &midi_event, 0);
 
                 const pad_input_event_t input_event = {
-                    .channel = channel,
+                    .pad_index = pad_index,
                     .pressed = true
                 };
                 xQueueSend(padsManager.pads_input_events, &input_event, 0);
@@ -85,7 +85,7 @@ void process_pad_physics(PadsManager& padsManager, const uint8_t channel, const 
         {
             const pad_midi_event_t midi_event =
             {
-                .channel = channel,
+                .channel = pad->channel,
                 .note = pad->note,
                 .velocity = 0,
                 .type = NOTE_OFF
@@ -94,7 +94,7 @@ void process_pad_physics(PadsManager& padsManager, const uint8_t channel, const 
             xQueueSend(padsManager.pads_midi_events, &midi_event, 0);
 
             const pad_input_event_t input_event = {
-                .channel = channel,
+                .pad_index = pad_index,
                 .pressed = false
             };
             xQueueSend(padsManager.pads_input_events, &input_event, 0);
@@ -145,9 +145,10 @@ PadsManager::PadsManager()
         auto& pad = pads_settings[i];
         const auto config = padsComponent->get_pad_config(i);
 
+        pad.note = config.note;
+        pad.channel = config.channel;
         pad.threshold = config.threshold;
         pad.press_type = config.press_type;
-        pad.note = config.note;
 
         pad.state = PAD_IDLE;
         pad.peak = 0;

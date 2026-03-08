@@ -72,6 +72,7 @@ bool ConfigComponent::direct_write(const std::string& buffer, const std::string&
             return false;
 
         set_bpm(bpm);
+        commit();
         return true;
     }
 

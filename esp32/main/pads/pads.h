@@ -19,7 +19,7 @@ typedef enum : uint8_t
 
 typedef struct
 {
-    uint8_t channel;
+    uint8_t pad_index;
     bool pressed;
 } pad_input_event_t;
 
@@ -41,15 +41,15 @@ typedef enum : uint8_t
 
 typedef struct
 {
-    // settings
-    uint8_t note;
-    pad_press_type_t press_type;
-    uint16_t threshold;
+    uint8_t note;                   // MIDI setting
+    uint8_t channel;                // MIDI setting
+    pad_press_type_t press_type;    // Internal setting
+    pad_state_t state;              // state
 
-    // states
-    uint16_t peak;
-    uint32_t timer_start;
-    pad_state_t state;
+    uint16_t threshold;             // Internal setting
+    uint16_t peak;                  // state
+
+    uint32_t timer_start;           // state
 } drum_pad_t;
 
 typedef struct

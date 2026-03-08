@@ -3,7 +3,7 @@
 
 std::string Utils::int_to_note(const int note)
 {
-    if (note < 0 || note > 127) return "";
+    if (note < 0 || note > MAX_MIDI_NOTE) return "";
 
     static const std::array<std::string, 12> note_names = {
         "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"

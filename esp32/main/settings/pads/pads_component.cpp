@@ -2,6 +2,7 @@
 
 #include <esp_log.h>
 #include <settings/manager.h>
+#include <utils/utils.h>
 
 using ArduinoJson::JsonArray, ArduinoJson::JsonObject;
 
@@ -86,10 +87,21 @@ pad_config_t PadsComponent::get_pad_config(const uint8_t index) const
 
 void PadsComponent::set_pad_note(const uint8_t index, const uint8_t note)
 {
+    if (note > Utils::MAX_MIDI_NOTE) return;
+
     std::lock_guard lock(mut);
     const auto array = values["pads"].as<JsonArray>();
     array[index]["note"] = note;
     //configs[index].note = note;
+}
+
+void PadsComponent::set_pad_channel(const uint8_t index, const uint8_t channel)
+{
+    if (channel > Utils::MAX_MIDI_CHANNELS) return;
+
+    std::lock_guard lock(mut);
+    const auto array = values["pads"].as<JsonArray>();
+    array[index]["channel"] = channel;
 }
 
 void PadsComponent::on_load()
@@ -131,11 +143,18 @@ void PadsComponent::save()
         const auto& settings = configs[i];
 
         config.note = settings.note;
-        // TODO: channel?
+        config.channel = settings.channel;
         config.press_type = settings.press_type;
         config.threshold = settings.threshold;
     }
 
     padsManager.resume_task();
     // TODO
+}
+
+std::string PadsComponent::direct_read(const std::string& arg)
+{
+    std::string buffer;
+    SettingsUtils::read_file(filename, buffer);
+    return buffer;
 }

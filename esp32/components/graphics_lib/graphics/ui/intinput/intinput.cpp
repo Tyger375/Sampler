@@ -4,7 +4,7 @@ ui_intinput_config_t UIIntInput::defaultConfig()
 {
     return {
         .text = "",
-        .customFormat = [](const int value) { return std::to_string(value); },
+        .formatValue = [](const int value) { return std::to_string(value); },
         .onChange = [](const int value) { return value; },
         .onDone = [](const int _) {}
     };
@@ -19,7 +19,7 @@ UIIntInput::UIIntInput(ui_intinput_config_t config, const int defaultValue)
 
 std::string UIIntInput::render(const bool selected)
 {
-    return (selected ? ">" : "") +  config.text + ": " + config.customFormat(value);
+    return (selected ? ">" : "") +  config.text + ": " + config.formatValue(value);
 }
 
 bool UIIntInput::on_event(const graphics_event_t event)

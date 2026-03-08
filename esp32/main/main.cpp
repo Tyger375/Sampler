@@ -110,8 +110,28 @@ extern "C" void tud_vendor_rx_cb(uint8_t, const uint8_t*, uint16_t)
 void vendor_respond(std::string string)
 {
     string += "\n";
-    tud_vendor_write(string.c_str(), string.size());
-    tud_vendor_write_flush();
+
+    const char* ptr = string.c_str();
+    size_t remaining = string.length();
+
+    while (remaining > 0)
+    {
+        const size_t available = tud_vendor_write_available();
+
+        if (available > 0)
+        {
+            const size_t to_send = (remaining < available) ? remaining : available;
+            tud_vendor_write(ptr, to_send);
+
+            ptr += to_send;
+            remaining -= to_send;
+
+            tud_vendor_write_flush();
+        } else
+        {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+    }
 }
 
 void on_vendor_cmd(const std::vector<std::string>& cmd)
@@ -382,16 +402,16 @@ extern "C" [[noreturn]] void app_main()
         {
             xQueueReceive(padsManager.pads_input_events, &pad_input_event, 0);
 
-            const auto channel = pad_input_event.channel;
+            const auto pad_index = pad_input_event.pad_index;
 
             if (pad_input_event.pressed)
             {
-                pads_press_start_time[channel] = esp_log_timestamp();
+                pads_press_start_time[pad_index] = esp_log_timestamp();
                 continue;
             } else
             {
-                const uint32_t duration = esp_log_timestamp() - pads_press_start_time[channel];
-                uint32_t custom_event = 0 | (channel & 0b111);
+                const uint32_t duration = esp_log_timestamp() - pads_press_start_time[pad_index];
+                uint32_t custom_event = 0 | (pad_index & 0b111);
 
                 if (duration >= LONG_PRESS_THRESHOLD_MS)
                 {
