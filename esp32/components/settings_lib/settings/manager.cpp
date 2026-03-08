@@ -101,3 +101,14 @@ void SettingsManager::add_component(component_t component)
     component->init(saves_queue);
     components[id] = std::move(component);
 }
+
+SettingsComponent* SettingsManager::get_component(const std::string& id)
+{
+    if (!components.contains(id))
+    {
+        ESP_LOGE("SettingsManager", "Requested component (%s) does not exist", id.c_str());
+        return nullptr;
+    }
+
+    return components[id].get();
+}

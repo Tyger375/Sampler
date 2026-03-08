@@ -13,9 +13,11 @@
 #include "screens/screens.h"
 #include <graphics/manager/graphics_manager.h>
 #include <settings/manager.h>
-#include <ArduinoJson.hpp>
 #include <settings/config/config_component.h>
 #include <settings/pads/pads_component.h>
+#include <string>
+#include <iterator>
+#include <sstream>
 
 [[noreturn]] void sequencer_task(void* /*pvParameters*/) {
     const auto& quantizer = Quantizer::instance();
@@ -53,7 +55,7 @@
         {
             //ESP_LOGI("DRUMPAD", "%u %u %i", value.channel, value.velocity, value.type);
             //ESP_LOGI("DRUMPAD", "%u %u", value.channel, value.velocity);
-            if (tud_midi_mounted() && padsManager.enable)
+            if (tud_midi_mounted() && padsManager.is_enabled)
             {
                 if (value.type == NOTE_ON)
                 {
@@ -105,13 +107,85 @@ extern "C" void tud_vendor_rx_cb(uint8_t, const uint8_t*, uint16_t)
     }
 }
 
-void on_vendor_cmd(const std::string& cmd)
+void vendor_respond(std::string string)
 {
-    if (cmd == "ECHO")
+    string += "\n";
+    tud_vendor_write(string.c_str(), string.size());
+    tud_vendor_write_flush();
+}
+
+void on_vendor_cmd(const std::vector<std::string>& cmd)
+{
+    // Make abstract layer for vendor CMDs
+    const auto& name = cmd.at(0);
+    if (name == "ECHO")
     {
-        tud_vendor_write("ECHO\n", 5);
-        tud_vendor_write_flush();
+        vendor_respond("ECHO");
         return;
+    }
+
+    if (name == "READ_CONFIG")
+    {
+        if (cmd.size() != 2)
+        {
+            vendor_respond("invalid args");
+            return;
+        }
+
+        const auto& component_name = cmd.at(1);
+        auto* component = SettingsManager::instance().get_component(component_name);
+        if (component == nullptr)
+        {
+            vendor_respond("invalid component_name");
+            return;
+        }
+        const auto buffer = component->direct_read("");
+        vendor_respond(buffer);
+        return;
+    }
+
+    if (name == "WRITE_CONFIG")
+    {
+        if (cmd.size() < 3)
+        {
+            vendor_respond("invalid args");
+            return;
+        }
+
+        const auto& component_name = cmd.at(1);
+        auto* component = SettingsManager::instance().get_component(component_name);
+        if (component == nullptr)
+        {
+            vendor_respond("invalid component_name");
+            return;
+        }
+        auto arg = cmd.at(2);
+        std::string buffer;
+        if (arg.starts_with("-"))
+        {
+            arg.erase(0, 1);
+            if (cmd.size() < 4)
+            {
+                vendor_respond("invalid args");
+                return;
+            }
+
+            for (size_t i = 3; i < cmd.size(); i++)
+            {
+                buffer += cmd[i];
+            }
+        } else
+        {
+            arg = "";
+            for (size_t i = 2; i < cmd.size(); i++)
+            {
+                buffer += cmd[i];
+            }
+        }
+        if (component->direct_write(buffer, arg))
+            vendor_respond("Success");
+        else
+            vendor_respond("Failed");
     }
 }
 
@@ -137,7 +211,13 @@ void on_vendor_cmd(const std::string& cmd)
                 message.erase(0, pos + 1);
 
                 ESP_LOGI("Vendor", "Received: %s", cmd.c_str());
-                on_vendor_cmd(cmd);
+
+                std::istringstream iss(cmd);
+                std::vector results(
+                    std::istream_iterator<std::string>{iss},
+                    std::istream_iterator<std::string>()
+                    );
+                on_vendor_cmd(results);
             }
         }
     }

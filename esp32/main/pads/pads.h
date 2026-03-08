@@ -77,13 +77,14 @@ public:
     void operator=(const PadsManager&) = delete;
 
     void start_task();
-    void pause_task() const;
-    void resume_task() const;
+    void pause_task();
+    void resume_task();
 
     QueueHandle_t pads_midi_events;
     QueueHandle_t pads_input_events;
 
-    std::atomic<bool> enable = true;
+    std::atomic<bool> is_task_paused = false;
+    std::atomic<bool> is_enabled = true;
 
     drum_pad_t pads_settings[8]{};
     TaskHandle_t padsSTaskHandle = nullptr;

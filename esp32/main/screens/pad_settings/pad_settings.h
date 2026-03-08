@@ -13,7 +13,9 @@ public:
     PadSettingsScreen();
 
     void on_start() override;
+    void on_end() override;
 
+    bool on_back() override;
     bool on_custom_event(uint32_t) override;
 
     /*

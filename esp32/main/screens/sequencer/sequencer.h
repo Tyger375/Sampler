@@ -5,7 +5,7 @@
 
 class SequencerScreen : public Screen
 {
-    int pageFocus = -1;
+    int8_t pageFocus = -1;
     uint8_t editingTrack = 0;
 
     void sequencer_page();

@@ -18,6 +18,8 @@ class PadsComponent : public SettingsComponent
     ArduinoJson::JsonDocument values;
     pad_config_t configs[8]{};
 
+    std::mutex mut;
+
     /*
      * Update VERSION every time JSON structure changes
      * This *DELETES* the old file and creates a new one with default values
@@ -34,6 +36,8 @@ public:
     PadsComponent();
 
     [[nodiscard]] pad_config_t get_pad_config(uint8_t index) const;
+
+    void set_pad_note(uint8_t index, uint8_t note);
 
     void on_load() override;
     void save() override;

@@ -20,6 +20,9 @@ public:
     void set_bpm(int bpm);
 
     void save() override;
+
+    std::string direct_read(const std::string& arg) override;
+    bool direct_write(const std::string& buffer, const std::string& arg) override;
 };
 
 

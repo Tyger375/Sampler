@@ -1,9 +1,12 @@
 #include "pad_settings.h"
 
 #include <esp_log.h>
+#include <graphics/ui/button/button.h>
 #include <graphics/ui/intinput/intinput.h>
 #include <graphics/ui/text/text.h>
 #include <pads/pads.h>
+#include <settings/manager.h>
+#include <settings/pads/pads_component.h>
 #include <utils/utils.h>
 #include "../screens.h"
 
@@ -19,7 +22,27 @@ void PadSettingsScreen::on_start()
 {
     Screen::on_start();
 
+    PadsManager::instance().is_enabled = false;
+
     select_pad();
+}
+
+void PadSettingsScreen::on_end()
+{
+    Screen::on_end();
+
+    PadsManager::instance().is_enabled = true;
+}
+
+bool PadSettingsScreen::on_back()
+{
+    if (pageFocus >= 0)
+    {
+        select_pad();
+        return true;
+    }
+
+    return Screen::on_back();
 }
 
 bool PadSettingsScreen::on_custom_event(const uint32_t event)
@@ -40,6 +63,7 @@ bool PadSettingsScreen::on_custom_event(const uint32_t event)
 void PadSettingsScreen::select_pad()
 {
     pageFocus = -1;
+    row_offset = 0;
     elements.clear();
 
     add_element(std::make_unique<UIText>("Press button"));
@@ -47,12 +71,49 @@ void PadSettingsScreen::select_pad()
 
 void PadSettingsScreen::pad_selected()
 {
-    if (pageFocus < 0) return;
+    if (pageFocus < 0 || pageFocus > 8) return;
+
+    row_offset = 0;
+
+    auto padSettings = SettingsManager::instance().get_component<PadsComponent>("pads");
+    if (padSettings == nullptr) return;
+
+    const auto config = padSettings->get_pad_config(pageFocus);
 
     elements.clear();
 
-    elements.push_back(std::make_unique<UIText>("PAD: " + std::to_string(focus)));
+    add_element(std::make_unique<UIText>("PAD: " + std::to_string(pageFocus)));
 
+    ui_intinput_config_t noteInput{
+        .text = "Note",
+        .customFormat = [](const int value)
+        {
+            return Utils::int_to_note(value);
+        },
+        .onChange = [](int value)
+        {
+            if (value < 0) value = 0;
+            if (value > 127) value = 127;
+            return value;
+        },
+        .onDone = [this, padSettings](const int value)
+        {
+            if (pageFocus < 0 || pageFocus > 8) return;
+
+            padSettings->set_pad_note(pageFocus, value);
+        }
+    };
+    add_element(std::make_unique<UIIntInput>(noteInput, config.note));
+
+    ui_button_config_t saveBtn{
+        .text = "Save",
+        .callback = [this, padSettings]
+        {
+            padSettings->commit();
+            on_back();
+        }
+    };
+    add_element(std::make_unique<UIButton>(saveBtn));
     /*
     auto note = std::make_unique<UIIntInput>([this](const int value)
     {

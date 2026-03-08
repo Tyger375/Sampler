@@ -1,5 +1,5 @@
 #include "config_component.h"
-
+#include <sstream>
 #include <quantizer/quantizer.h>
 
 ConfigComponent::ConfigComponent(): SettingsComponent("config")
@@ -29,6 +29,8 @@ int ConfigComponent::bpm() const
 
 void ConfigComponent::set_bpm(const int bpm)
 {
+    if (bpm < 60 || bpm > 200) return;
+
     {
         std::lock_guard lock(mut);
         values["bpm"] = bpm;
@@ -47,6 +49,31 @@ void ConfigComponent::save()
     if (!SettingsUtils::save_json(filename, output))
     {
         ESP_LOGE("ConfigComponent", "Failed to save file");
-        return;
     }
+}
+
+std::string ConfigComponent::direct_read(const std::string& arg)
+{
+    std::string buffer;
+    SettingsUtils::read_file(filename, buffer);
+    return buffer;
+}
+
+bool ConfigComponent::direct_write(const std::string& buffer, const std::string& arg)
+{
+    if (arg == "BPM")
+    {
+        std::istringstream iss(buffer);
+        int bpm;
+
+        iss >> bpm;
+
+        if (iss.fail())
+            return false;
+
+        set_bpm(bpm);
+        return true;
+    }
+
+    return false;
 }

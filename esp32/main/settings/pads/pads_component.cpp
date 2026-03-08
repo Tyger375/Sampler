@@ -35,7 +35,7 @@ void PadsComponent::load_defaults()
     const auto array = values["pads"].to<JsonArray>();
 
     uint8_t note = 60;
-    for (auto & config : configs)
+    for (auto& config : configs)
     {
         config.note = note++;
         config.channel = 0;
@@ -84,8 +84,17 @@ pad_config_t PadsComponent::get_pad_config(const uint8_t index) const
     return configs[index];
 }
 
+void PadsComponent::set_pad_note(const uint8_t index, const uint8_t note)
+{
+    std::lock_guard lock(mut);
+    const auto array = values["pads"].as<JsonArray>();
+    array[index]["note"] = note;
+    //configs[index].note = note;
+}
+
 void PadsComponent::on_load()
 {
+    std::lock_guard lock(mut);
     if (!SettingsUtils::read_json(filename, values))
     {
         ESP_LOGI("PadsComponent", "File doesn't exist, writing");
@@ -103,5 +112,30 @@ void PadsComponent::on_load()
 
 void PadsComponent::save()
 {
+    std::lock_guard lock(mut);
+    if (!SettingsUtils::save_json(filename, values))
+    {
+        ESP_LOGE("PadsComponent", "Failed to save file");
+        return;
+    }
+
+    json_to_configs();
+
+    auto& padsManager = PadsManager::instance();
+
+    padsManager.pause_task();
+
+    for (size_t i = 0; i < 8; i++)
+    {
+        auto& config = padsManager.pads_settings[i];
+        const auto& settings = configs[i];
+
+        config.note = settings.note;
+        // TODO: channel?
+        config.press_type = settings.press_type;
+        config.threshold = settings.threshold;
+    }
+
+    padsManager.resume_task();
     // TODO
 }

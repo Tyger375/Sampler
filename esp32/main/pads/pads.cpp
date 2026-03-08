@@ -112,6 +112,11 @@ void input_scan_task(void* pvParameters)
 
     while (true)
     {
+        if (padsManager.is_task_paused) {
+            vTaskDelay(pdMS_TO_TICKS(100)); // Sleep efficiently
+            continue; // Skip the ADC logic
+        }
+
         esp_rom_delay_us(500);
 
         const uint16_t val1 = packet->ads1->read();
@@ -135,7 +140,7 @@ PadsManager::PadsManager()
 
     const auto padsComponent = SettingsManager::instance().get_component<PadsComponent>("pads");
 
-    for (size_t i = 0; i < 8; ++i)
+    for (size_t i = 0; i < 8; i++)
     {
         auto& pad = pads_settings[i];
         const auto config = padsComponent->get_pad_config(i);
@@ -208,12 +213,12 @@ void PadsManager::start_task()
     );
 }
 
-void PadsManager::pause_task() const
+void PadsManager::pause_task()
 {
-    vTaskSuspend(padsSTaskHandle);
+    is_task_paused = true;
 }
 
-void PadsManager::resume_task() const
+void PadsManager::resume_task()
 {
-    vTaskResume(padsSTaskHandle);
+    is_task_paused = false;
 }

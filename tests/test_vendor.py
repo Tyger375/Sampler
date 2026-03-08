@@ -26,15 +26,17 @@ usb.util.claim_interface(dev, 4)
 EP_OUT = 0x04
 EP_IN  = 0x84
 
-msg = "ECHO"
-print(f"Sending: {msg}")
-dev.write(EP_OUT, f"{msg}\n")
+while True:
+    msg = input("MSG: ")
+    if msg == "break":
+        break;
+    dev.write(EP_OUT, f"{msg}\n")
 
-try:
-    ret = dev.read(EP_IN, 64, timeout=1000)
-    print(f"Received: {''.join([chr(x) for x in ret])}")
-except Exception as e:
-    print(f"Read failed: {e}")
+    try:
+        ret = dev.read(EP_IN, 64, timeout=1000)
+        print(f"Received: {''.join([chr(x) for x in ret])}")
+    except Exception as e:
+        print(f"Read failed: {e}")
 
 # Clean up
 usb.util.release_interface(dev, 4)

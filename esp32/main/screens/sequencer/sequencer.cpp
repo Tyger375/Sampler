@@ -63,7 +63,7 @@ void SequencerScreen::show_tracks()
 {
     row_offset = 0;
     pageFocus = 0;
-    PadsManager::instance().enable = true;
+    PadsManager::instance().is_enabled = true;
     elements.clear();
 
     elements.push_back(std::make_unique<UIText>("Tracks"));
@@ -101,7 +101,7 @@ void SequencerScreen::edit_track(const uint16_t index)
 {
     pageFocus = 1;
     row_offset = 0;
-    PadsManager::instance().enable = false;
+    PadsManager::instance().is_enabled = false;
     editingTrack = index;
     elements.clear();
 

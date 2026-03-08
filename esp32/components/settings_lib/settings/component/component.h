@@ -19,6 +19,9 @@ public:
     virtual void save() = 0;
     virtual void commit();
 
+    virtual std::string direct_read(const std::string& arg);
+    virtual bool direct_write(const std::string& buffer, const std::string& arg);
+
     SettingsComponent(std::string id) : id(std::move(id)) {}
     virtual ~SettingsComponent() = default;
 };

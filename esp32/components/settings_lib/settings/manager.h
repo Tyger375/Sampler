@@ -33,6 +33,7 @@ public:
     template <typename T>
     requires std::derived_from<T, SettingsComponent>
     T* get_component(const std::string& id);
+    SettingsComponent* get_component(const std::string& id);
 
 private:
     QueueHandle_t saves_queue;
