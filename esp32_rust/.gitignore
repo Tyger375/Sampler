@@ -1,0 +1,9 @@
+/.vscode
+/.embuild
+build/
+components/*/target/
+components/*/.embuild/
+managed_components/
+Cargo.lock
+dependencies.lock
+env.sh
