@@ -31,6 +31,8 @@ extern "C" fn rust_main() {
     let i2c_config = I2cConfig::new().baudrate(Hertz(400_000));
     let i2c_master = I2cDriver::new(peripherals.i2c0, peripherals.pins.gpio12, peripherals.pins.gpio11, &i2c_config).unwrap();
 
+    let bus: &'static _ = shared_bus::new_std!(SomeI2cBus = i2c_master).unwrap();
+
     //let ads1 = ADS1015::new(&mut i2c_master, 0x48);
     //let ads2 = ADS1015::new(&mut i2c_master, 0x49);
 
