@@ -117,6 +117,16 @@ extern "C" bool midi_mounted()
     return tud_midi_mounted();
 }
 
+extern "C" void esp_delay_us(const uint32_t micros)
+{
+    esp_rom_delay_us(micros);
+}
+
+extern "C" uint32_t log_timestamp()
+{
+    return esp_log_timestamp();
+}
+
 extern "C" void rust_main(void);
 
 extern "C" void app_main(void) {

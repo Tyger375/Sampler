@@ -1,21 +1,44 @@
-use std::ffi::CStr;
-use std::thread;
-use std::time::Duration;
+use crate::midi::MIDI;
+use crate::pads::{PadsManager};
+use crate::quantizer::Quantizer;
+use core::default::Default;
+use std::sync::{mpsc, Arc};
+use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use esp_idf_svc::hal::cpu::Core;
 use esp_idf_svc::hal::delay;
-use core::default::Default;
-use esp_idf_svc::hal::i2c::{I2cConfig, I2cDriver};
 use esp_idf_svc::hal::peripherals::Peripherals;
-use esp_idf_svc::hal::task::thread::ThreadSpawnConfiguration;
+use std::thread;
+use std::thread::current;
+use std::time::Duration;
+use esp_idf_svc::hal::i2c::{I2cConfig, I2cDriver};
+use esp_idf_svc::hal::task::notification::{Notification, Notifier};
 use esp_idf_svc::hal::units::Hertz;
-use crate::ads1015::ADS1015;
-use crate::midi::MIDI;
-use crate::quantizer::{Quantizer};
-use shared_bus;
 
-pub mod midi;
-pub mod quantizer;
 pub mod ads1015;
+pub mod midi;
+pub mod pads;
+pub mod quantizer;
+pub mod task;
+
+extern "C" {
+    fn esp_delay_us(micros: u32);
+    fn log_timestamp() -> u32;
+}
+
+pub fn delay_us(micros: u32) {
+    unsafe {
+        esp_delay_us(micros);
+    }
+}
+
+pub fn timestamp() -> u32 {
+    unsafe { log_timestamp() }
+}
+
+enum SequencerMessage {
+    NoteOn(u8),
+    NoteOff(u8)
+}
 
 #[no_mangle]
 extern "C" fn rust_main() {
@@ -28,39 +51,104 @@ extern "C" fn rust_main() {
 
     let peripherals = Peripherals::take().unwrap();
 
-    let i2c_config = I2cConfig::new().baudrate(Hertz(400_000));
-    let i2c_master = I2cDriver::new(peripherals.i2c0, peripherals.pins.gpio12, peripherals.pins.gpio11, &i2c_config).unwrap();
+    let config = I2cConfig::new().baudrate(Hertz(400_000));
+    let mut i2c_master = I2cDriver::new(peripherals.i2c1, peripherals.pins.gpio21, peripherals.pins.gpio18, &config).unwrap();
 
-    let bus: &'static _ = shared_bus::new_std!(SomeI2cBus = i2c_master).unwrap();
+    let led = mpsc::channel::<(u8, bool)>();
 
-    //let ads1 = ADS1015::new(&mut i2c_master, 0x48);
-    //let ads2 = ADS1015::new(&mut i2c_master, 0x49);
+    let bytes = [0x06, 0x00];
+    i2c_master.write(0x20, &bytes, 1000).unwrap();
 
-    let mut quantizer = Quantizer::new().expect("Failed to create quantizer");
-    quantizer.start(140).unwrap();
+    let pads_manager = PadsManager::new(
+        peripherals.i2c0,
+        peripherals.pins.gpio12.into(),
+        peripherals.pins.gpio11.into(),
+        0x48,
+        0x49,
+    ).expect("Failed to create PadsManager");
 
-    ThreadSpawnConfiguration {
-        name: Some(CStr::from_bytes_with_nul(b"quantizer_task\0").unwrap()),
+    let queue = pads_manager.get_midi_events();
+    let _handle = spawn_task!({
+        name: "pads_input_task",
         stack_size: 4096,
-        priority: 24,
+        priority: 23,
         pin_to_core: Some(Core::Core1),
-        ..Default::default()
-    }.set().unwrap();
-    let quantizer_queue = quantizer.get_queue();
-    thread::spawn(move || {
+    }, move || {
         loop {
-            // Quantizer ticks
-            if let Some((_packet, _)) = quantizer_queue.recv_front(delay::BLOCK) {
-                let sync_packet = [0x0F, 0xF8, 0x00, 0x00];
-                MIDI::send(&sync_packet);
+            if let Some((packet, _)) = queue.recv_front(delay::BLOCK) {
+                let midi: (u8, u8) = packet.midi_type.into();
 
-                // handle sequencer
+                let bytes: [u8; 4] = [midi.0, midi.1 | (packet.channel & 0x0F), packet.note, packet.velocity];
+                MIDI::send(&bytes);
+            };
+        }
+    });
+
+    let (sequencer_tx, sequencer_channel) = mpsc::channel::<SequencerMessage>();
+
+    let _handle = spawn_task!({
+        name: "sequencer_task",
+        stack_size: 4096,
+        priority: 23,
+        pin_to_core: Some(Core::Core1),
+    }, move || {
+        loop {
+            if let Ok(item) = sequencer_channel.recv() {
+                match item {
+                    SequencerMessage::NoteOn(step) => {
+                        /*if (step % 4) == 0 {
+                            MIDI::send(&[0x09, 0x90, 70, 127]);
+                        }*/
+                    }
+                    SequencerMessage::NoteOff(step) => {
+                        /*if (step % 4) == 0 {
+                            MIDI::send(&[0x08, 0x80, 70, 0]);
+                        }*/
+                    }
+                }
             }
         }
     });
-    ThreadSpawnConfiguration::default().set().unwrap();
+
+    let paused = Arc::new(AtomicBool::new(false));
+    let quantizer_seq_tx = sequencer_tx.clone();
+    let _handle = spawn_task!({
+        name: "quantizer_task",
+        stack_size: 4096,
+        priority: 24,
+        pin_to_core: Some(Core::Core1),
+    }, move || {
+        let notification = Notification::new();
+        let quantizer = Arc::new(Quantizer::new(notification.notifier()).expect("Failed to create quantizer"));
+        quantizer.start(140).unwrap();
+
+        const MIDI_SYNC_MSG: [u8; 4] = [0x0F, 0xF8, 0x00, 0x00];
+
+        loop {
+            if paused.load(Ordering::Relaxed) {
+                thread::sleep(Duration::from_secs(1));
+                continue;
+            }
+
+            notification.wait_any();
+            MIDI::send(&MIDI_SYNC_MSG);
+
+            let ticks = quantizer.ticks.load(Ordering::SeqCst);
+            let steps = quantizer.steps.load(Ordering::SeqCst);
+
+            if ticks == 0 {
+                quantizer_seq_tx.send(SequencerMessage::NoteOn(steps)).ok();
+            } else if ticks == 5 {
+                quantizer_seq_tx.send(SequencerMessage::NoteOff(steps)).ok();
+            }
+        }
+    });
 
     loop {
         thread::sleep(Duration::from_secs(1));
     }
 }
+
+/*CLion complains*/
+#[allow(dead_code)]
+fn main() {}
