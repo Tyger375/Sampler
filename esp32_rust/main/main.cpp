@@ -7,6 +7,9 @@
 #include "tinyusb_cdc_acm.h"
 #include "tinyusb_console.h"
 
+#include "esp_clk_tree.h"
+#include "esp_timer.h"
+
 #define TUSB_DESCRIPTOR_TOTAL_LEN (TUD_CONFIG_DESC_LEN + TUD_MIDI_DESC_LEN + TUD_CDC_DESC_LEN + TUD_VENDOR_DESC_LEN)
 
 enum interface_count {
@@ -127,6 +130,11 @@ extern "C" uint32_t log_timestamp()
     return esp_log_timestamp();
 }
 
+extern "C" uint32_t timer_get_time()
+{
+    return static_cast<uint32_t>(esp_timer_get_time());
+}
+
 extern "C" void rust_main(void);
 
 extern "C" void app_main(void) {
@@ -135,6 +143,10 @@ extern "C" void app_main(void) {
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     usb_drain_rx();
+
+    uint32_t cpu_freq_hz;
+    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_CPU, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &cpu_freq_hz);
+    printf("CPU Frequency: %lu MHz\n", cpu_freq_hz / 1000000);
 
     rust_main();
 }

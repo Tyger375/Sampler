@@ -1,0 +1,7 @@
+pub mod lcd1602;
+
+pub trait GraphicsDriver {
+    fn init(&mut self);
+    fn draw(&mut self, rows: &Vec<String>);
+    fn clear(&mut self);
+}

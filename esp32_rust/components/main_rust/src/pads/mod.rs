@@ -6,21 +6,20 @@ use crate::ads1015::{
     DataRateConfig, MuxConfig, OpModeConfig, ADS1015,
 };
 use crate::midi::MidiType;
+use crate::pads::task::{TaskState, TaskStatus};
 use crate::{delay_us, spawn_task, timestamp};
 use esp_idf_svc::hal::cpu::Core::Core0;
 use esp_idf_svc::hal::gpio::AnyIOPin;
 use esp_idf_svc::hal::i2c::{I2c, I2cConfig, I2cDriver};
 use esp_idf_svc::hal::task::queue::Queue;
 use esp_idf_svc::hal::units::Hertz;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{array, thread};
-use std::ops::DerefMut;
-use crate::pads::task::{TaskState, TaskStatus};
 
 #[derive(Debug, Copy, Clone)]
 pub struct PadInputEvent {
+    pub index: u8,
     pub channel: u8,
     pub note: u8,
     pub velocity: u8,
@@ -68,7 +67,7 @@ impl DrumPad {
     }
 }
 
-fn process_pad_physics(settings: &mut DrumPad, value: u16) -> Option<PadInputEvent> {
+fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<PadInputEvent> {
     let now = timestamp();
 
     match settings.state {
@@ -97,6 +96,7 @@ fn process_pad_physics(settings: &mut DrumPad, value: u16) -> Option<PadInputEve
                 settings.state = PadState::Sustain;
 
                 Some(PadInputEvent {
+                    index,
                     channel: settings.channel,
                     note: settings.note,
                     velocity: velocity as u8,
@@ -120,6 +120,7 @@ fn process_pad_physics(settings: &mut DrumPad, value: u16) -> Option<PadInputEve
             settings.state = PadState::Idle;
 
             Some(PadInputEvent {
+                index,
                 channel: settings.channel,
                 note: settings.note,
                 velocity: 0,
@@ -165,8 +166,8 @@ impl PadsManager {
         ads1.set_config(&ads_cfg)?;
         ads2.set_config(&ads_cfg)?;
 
-        let settings = Arc::new(Mutex::new(array::from_fn(|_| {
-            DrumPad::new(60, 0, PadPressType::OneShot, 50)
+        let settings = Arc::new(Mutex::new(array::from_fn(|i| {
+            DrumPad::new(60 + i as u8, 0, PadPressType::OneShot, 50)
         })));
         let queue = Arc::new(Queue::new(64));
         let task_status = Arc::new(TaskState::new(TaskStatus::Running));
@@ -187,7 +188,7 @@ impl PadsManager {
                     *guard
                 };
 
-                let mut channel = 0;
+                let mut channel: usize = 0;
 
                 loop {
                     match task_status.get() {
@@ -197,10 +198,10 @@ impl PadsManager {
                             let value1 = ads1.read();
                             let value2 = ads2.read();
 
-                            if let Some(item) = process_pad_physics(&mut pads_settings[channel], value1) {
+                            if let Some(item) = process_pad_physics(channel as u8, &mut pads_settings[channel], value1) {
                                 queue.send_back(item, 0).unwrap();
                             }
-                            if let Some(item) = process_pad_physics(&mut pads_settings[channel + 4], value2) {
+                            if let Some(item) = process_pad_physics((channel as u8) + 4, &mut pads_settings[channel + 4], value2) {
                                 queue.send_back(item, 0).unwrap();
                             }
 

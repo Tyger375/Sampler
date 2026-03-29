@@ -1,28 +1,36 @@
-use crate::midi::MIDI;
-use crate::pads::{PadsManager};
+use crate::graphics::drivers::lcd1602::Lcd1602;
+use crate::graphics::event::GraphicsEvent;
+use crate::graphics::manager::GraphicsManager;
+use crate::midi::{MidiType, MIDI};
+use crate::pads::PadsManager;
 use crate::quantizer::Quantizer;
+use crate::screens::home::HomeScreen;
+use crate::selector::{RotationEvent, Selector, SelectorEvent};
 use core::default::Default;
-use std::sync::{mpsc, Arc};
-use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use esp_idf_svc::hal::cpu::Core;
 use esp_idf_svc::hal::delay;
-use esp_idf_svc::hal::peripherals::Peripherals;
-use std::thread;
-use std::thread::current;
-use std::time::Duration;
 use esp_idf_svc::hal::i2c::{I2cConfig, I2cDriver};
-use esp_idf_svc::hal::task::notification::{Notification, Notifier};
+use esp_idf_svc::hal::peripherals::Peripherals;
+use esp_idf_svc::hal::task::notification::Notification;
 use esp_idf_svc::hal::units::Hertz;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 pub mod ads1015;
 pub mod midi;
 pub mod pads;
 pub mod quantizer;
 pub mod task;
+pub mod graphics;
+pub mod screens;
+pub mod selector;
 
 extern "C" {
     fn esp_delay_us(micros: u32);
     fn log_timestamp() -> u32;
+    fn timer_get_time() -> u32;
 }
 
 pub fn delay_us(micros: u32) {
@@ -33,6 +41,10 @@ pub fn delay_us(micros: u32) {
 
 pub fn timestamp() -> u32 {
     unsafe { log_timestamp() }
+}
+
+pub fn get_time() -> u32 {
+    unsafe { timer_get_time() }
 }
 
 enum SequencerMessage {
@@ -52,12 +64,34 @@ extern "C" fn rust_main() {
     let peripherals = Peripherals::take().unwrap();
 
     let config = I2cConfig::new().baudrate(Hertz(400_000));
-    let mut i2c_master = I2cDriver::new(peripherals.i2c1, peripherals.pins.gpio21, peripherals.pins.gpio18, &config).unwrap();
+    let i2c_master = I2cDriver::new(peripherals.i2c1, peripherals.pins.gpio21, peripherals.pins.gpio18, &config).unwrap();
+    let i2c_master = Arc::new(Mutex::new(i2c_master));
 
-    let led = mpsc::channel::<(u8, bool)>();
+    let (led_tx, led_rx) = mpsc::channel::<(u8, bool)>();
+    let led_i2c = i2c_master.clone();
 
-    let bytes = [0x06, 0x00];
-    i2c_master.write(0x20, &bytes, 1000).unwrap();
+    thread::spawn(move || {
+        let mut leds = 0u8;
+        {
+            let mut guard = led_i2c.lock().unwrap();
+            guard.write(0x20, &[0x06, 0x00], 1000).unwrap();
+
+            guard.write(0x20, &[0x02, leds], 1000).unwrap();
+        }
+
+        loop {
+            if let Ok((index, press)) = led_rx.recv() {
+                if press {
+                    leds |= 1 << index;
+                } else {
+                    leds &= !(1 << index);
+                }
+
+                let mut guard = led_i2c.lock().unwrap();
+                guard.write(0x20, &[0x02, leds], 1000).unwrap();
+            }
+        }
+    });
 
     let pads_manager = PadsManager::new(
         peripherals.i2c0,
@@ -67,6 +101,7 @@ extern "C" fn rust_main() {
         0x49,
     ).expect("Failed to create PadsManager");
 
+    let leds_tx = led_tx.clone();
     let queue = pads_manager.get_midi_events();
     let _handle = spawn_task!({
         name: "pads_input_task",
@@ -80,6 +115,12 @@ extern "C" fn rust_main() {
 
                 let bytes: [u8; 4] = [midi.0, midi.1 | (packet.channel & 0x0F), packet.note, packet.velocity];
                 MIDI::send(&bytes);
+
+                if let MidiType::NoteOn = packet.midi_type {
+                    leds_tx.send((packet.index, true)).ok();
+                } else if let MidiType::NoteOff = packet.midi_type {
+                    leds_tx.send((packet.index, false)).ok();
+                }
             };
         }
     });
@@ -95,12 +136,12 @@ extern "C" fn rust_main() {
         loop {
             if let Ok(item) = sequencer_channel.recv() {
                 match item {
-                    SequencerMessage::NoteOn(step) => {
+                    SequencerMessage::NoteOn(_step) => {
                         /*if (step % 4) == 0 {
                             MIDI::send(&[0x09, 0x90, 70, 127]);
                         }*/
                     }
-                    SequencerMessage::NoteOff(step) => {
+                    SequencerMessage::NoteOff(_step) => {
                         /*if (step % 4) == 0 {
                             MIDI::send(&[0x08, 0x80, 70, 0]);
                         }*/
@@ -111,7 +152,10 @@ extern "C" fn rust_main() {
     });
 
     let paused = Arc::new(AtomicBool::new(false));
+    let (quantizer_tx, quantizer_rx) = mpsc::channel::<u8>();
+
     let quantizer_seq_tx = sequencer_tx.clone();
+    let q_paused = paused.clone();
     let _handle = spawn_task!({
         name: "quantizer_task",
         stack_size: 4096,
@@ -125,8 +169,13 @@ extern "C" fn rust_main() {
         const MIDI_SYNC_MSG: [u8; 4] = [0x0F, 0xF8, 0x00, 0x00];
 
         loop {
-            if paused.load(Ordering::Relaxed) {
-                thread::sleep(Duration::from_secs(1));
+            if q_paused.load(Ordering::Relaxed) {
+                while q_paused.load(Ordering::Relaxed) {
+                    if let Ok(item) = quantizer_rx.recv() {
+                        quantizer.start(item).unwrap();
+                        q_paused.store(false, Ordering::Relaxed);
+                    }
+                }
                 continue;
             }
 
@@ -144,8 +193,44 @@ extern "C" fn rust_main() {
         }
     });
 
+    let selector = Selector::new(
+        peripherals.pins.gpio8.into(),
+        peripherals.pins.gpio7.into(),
+        peripherals.pins.gpio9.into()
+    ).expect("Failed to create Selector");
+    let selector_queue = selector.get_queue();
+
+    // Graphics
+    let mut graphics_manager = GraphicsManager::new();
+    graphics_manager.install_driver(Lcd1602::new(i2c_master.clone(), 0x27));
+
+    graphics_manager.load_screen("home", Box::new(move || {
+        Box::new(HomeScreen::new())
+    }));
+    graphics_manager.navigate("home");
+
+    graphics_manager.update();
+
     loop {
-        thread::sleep(Duration::from_secs(1));
+        if let Some((res, _)) = selector_queue.recv_front(delay::BLOCK) {
+            match res {
+                SelectorEvent::Rotation(direction) => {
+                    graphics_manager.send_event(if let RotationEvent::Left = direction {
+                        GraphicsEvent::ScrollLeft
+                    } else {
+                        GraphicsEvent::ScrollRight
+                    });
+                }
+                SelectorEvent::Click(press) => {
+                    if press {
+                        paused.store(true, Ordering::Relaxed);
+                        quantizer_tx.send(180).unwrap();
+                        graphics_manager.send_event(GraphicsEvent::Click);
+                    }
+                }
+            }
+        }
+        graphics_manager.update();
     }
 }
 

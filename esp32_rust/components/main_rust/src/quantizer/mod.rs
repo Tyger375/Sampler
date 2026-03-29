@@ -1,6 +1,6 @@
 use std::num::NonZero;
 use esp_idf_svc::hal::task::queue::Queue;
-use esp_idf_svc::hal::timer::config::{AlarmConfig, TimerConfig};
+use esp_idf_svc::hal::timer::config::{AlarmConfig, ClockSource, CountDirection, TimerConfig};
 use esp_idf_svc::hal::timer::TimerDriver;
 use esp_idf_svc::hal::units::Hertz;
 use esp_idf_svc::sys::EspError;
@@ -23,7 +23,9 @@ impl<'a> Quantizer<'a> {
         let steps = Arc::new(AtomicU8::new(15));
 
         let mut timer_conf = TimerConfig::default();
-        timer_conf.resolution = Hertz(1_000_000);
+        timer_conf.clock_source = ClockSource::Default;
+        timer_conf.direction = CountDirection::Up;
+        timer_conf.resolution = Hertz(40_000_000);
         timer_conf.intr_priority = 3;
 
         println!("{:?}", timer_conf);
@@ -49,6 +51,8 @@ impl<'a> Quantizer<'a> {
             })?;
         }
 
+        timer.start()?;
+
         Ok(Quantizer {
             ticks,
             steps,
@@ -57,10 +61,10 @@ impl<'a> Quantizer<'a> {
     }
 
     pub fn start(&self, bpm: u8) -> Result<(), EspError> {
-        self.ticks.store(TICKS_PER_STEP - 1, Ordering::Relaxed);
-        self.steps.store(15, Ordering::Relaxed);
+        //self.ticks.store(TICKS_PER_STEP - 1, Ordering::Relaxed);
+        //self.steps.store(15, Ordering::Relaxed);
 
-        let time = 60u64 * 1_000_000;
+        let time = 60u64 * 40_000_000;
         let ticks = bpm as u64 * PPQ as u64;
         let timer_step = time / ticks;
         self.timer.set_alarm_action(Some(&AlarmConfig {
@@ -69,8 +73,6 @@ impl<'a> Quantizer<'a> {
             reload_count: 0,
             ..Default::default()
         }))?;
-
-        self.timer.start()?;
 
         Ok(())
     }
