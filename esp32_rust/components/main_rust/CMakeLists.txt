@@ -6,7 +6,7 @@
 #set(RUST_DEPS "pthread" "driver" "sdmmc" "esp_driver_cam" "esp_driver_dac" "esp_driver_gpio" "esp_driver_gptimer" "esp_driver_i2c" "esp_driver_i2s" "esp_driver_ledc" "esp_driver_mcpwm" "esp_driver_parlio" "esp_driver_pcnt" "esp_driver_ppa" "esp_driver_rmt" "esp_driver_sdio" "esp_driver_sdm" "esp_driver_sdmmc" "esp_driver_sdspi" "esp_driver_spi" "esp_driver_touch_sens" "esp_driver_tsens" "esp_driver_twai" "esp_driver_uart" "esp_driver_usb_serial_jtag")
 
 # Here's a non-minimal, reasonable set of ESP-IDF components that one might want enabled for Rust:
-set(RUST_DEPS "pthread" "driver" "vfs" "console" "fatfs" "spiffs" "esp_http_client" "esp_http_server" "espcoredump" "nvs_flash" "spi_flash" "mqtt" "sdmmc" "esp_driver_cam" "esp_driver_dac" "esp_driver_gpio" "esp_driver_gptimer" "esp_driver_i2c" "esp_driver_i2s" "esp_driver_ledc" "esp_driver_mcpwm" "esp_driver_parlio" "esp_driver_pcnt" "esp_driver_ppa" "esp_driver_rmt" "esp_driver_sdio" "esp_driver_sdm" "esp_driver_sdmmc" "esp_driver_sdspi" "esp_driver_spi" "esp_driver_touch_sens" "esp_driver_tsens" "esp_driver_twai" "esp_driver_uart" "esp_driver_usb_serial_jtag")
+set(RUST_DEPS "pthread" "driver" "vfs" "console" "fatfs" "spiffs" "esp_http_client" "esp_http_server" "espcoredump" "nvs_flash" "spi_flash" "mqtt" "sdmmc" "esp_driver_cam" "esp_driver_dac" "esp_driver_gpio" "esp_driver_gptimer" "esp_driver_i2c" "esp_driver_i2s" "esp_driver_ledc" "esp_driver_mcpwm" "esp_driver_parlio" "esp_driver_pcnt" "esp_driver_ppa" "esp_driver_rmt" "esp_driver_sdio" "esp_driver_sdm" "esp_driver_sdmmc" "esp_driver_sdspi" "esp_driver_spi" "esp_driver_touch_sens" "esp_driver_tsens" "esp_driver_twai" "esp_driver_uart" "esp_driver_usb_serial_jtag" "joltwallet__littlefs")
 
 idf_component_register(
     SRCS "placeholder.c"

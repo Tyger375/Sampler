@@ -1,5 +1,4 @@
 use std::num::NonZero;
-use esp_idf_svc::hal::task::queue::Queue;
 use esp_idf_svc::hal::timer::config::{AlarmConfig, ClockSource, CountDirection, TimerConfig};
 use esp_idf_svc::hal::timer::TimerDriver;
 use esp_idf_svc::hal::units::Hertz;

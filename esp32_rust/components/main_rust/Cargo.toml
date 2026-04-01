@@ -20,8 +20,10 @@ opt-level = "z"
 
 [dependencies]
 log = "0.4"
-esp-idf-svc = { version = "0.52.1", default-features = false, features = ["std", "native", "critical-section", "embassy-time-driver", "embassy-sync"] }
+esp-idf-svc = { version = "0.52.1", default-features = false, features = ["std", "alloc", "native", "critical-section", "embassy-time-driver", "embassy-sync"] }
 anyhow = "1.0.102"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "0.9.1"
 # Remove `generic-queue-8` if you plan to use `embassy-time` WITH `embassy-executor`
 embassy-time = { version = "0.5", features = ["generic-queue-8"] }
 
@@ -31,3 +33,6 @@ embuild = "0.33"
 [package.metadata.esp-idf-sys]
 esp_idf_tools_install_dir = "global"
 esp_idf_version = "v5.5.2"
+
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "joltwallet/littlefs", version = "1.14" }

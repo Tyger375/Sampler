@@ -120,6 +120,16 @@ extern "C" bool midi_mounted()
     return tud_midi_mounted();
 }
 
+extern "C" void vendor_out(const char* packet, const size_t length)
+{
+    tud_vendor_write(packet, length);
+}
+
+extern "C" void vendor_flush()
+{
+    tud_vendor_flush();
+}
+
 extern "C" void esp_delay_us(const uint32_t micros)
 {
     esp_rom_delay_us(micros);

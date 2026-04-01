@@ -1,4 +1,6 @@
+use std::sync::mpsc::Sender;
 use crate::graphics::screen::{Screen, ScreenData};
+use crate::graphics::ui::button::UIButton;
 use crate::graphics::ui::text::UIText;
 
 pub struct HomeScreen {
@@ -6,14 +8,22 @@ pub struct HomeScreen {
 }
 
 impl HomeScreen {
-    pub(crate) fn new() -> Self {
+    pub fn factory(navigator: Sender<String>) -> impl Fn() -> Box<dyn Screen> {
+        move || Box::new(HomeScreen::new(navigator.clone()))
+    }
+
+    pub fn new(navigator: Sender<String>) -> Self {
         let mut data = ScreenData::new();
 
-        let title = UIText::new("Hello World!".to_string());
+        let title = UIText::new("Home".to_string());
         data.add_element(title);
 
-        let text = UIText::new("Test".to_string());
-        data.add_element(text);
+        let nav = navigator.clone();
+        let button = UIButton::new("Settings".to_string(), Box::new(move || {
+            log::info!("Navigating to settings");
+            nav.send("settings".to_string()).unwrap();
+        }));
+        data.add_element(button);
 
         HomeScreen {
             data

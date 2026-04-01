@@ -1,10 +1,9 @@
 use std::sync::{Arc, Mutex};
 use esp_idf_svc::hal::i2c::I2cDriver;
-use crate::delay_us;
+use crate::utils::delay_us;
 use crate::graphics::drivers::GraphicsDriver;
 
 const RS_BIT: u8 = 0x01;
-const RW_BIT: u8 = 0x02;
 const EN_BIT: u8 = 0x04;
 const BL_BIT: u8 = 0x08;
 

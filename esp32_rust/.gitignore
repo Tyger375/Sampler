@@ -4,6 +4,7 @@ build/
 components/*/target/
 components/*/.embuild/
 managed_components/
+components*.lock
 Cargo.lock
 dependencies.lock
 env.sh

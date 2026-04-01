@@ -7,15 +7,16 @@ use crate::ads1015::{
 };
 use crate::midi::MidiType;
 use crate::pads::task::{TaskState, TaskStatus};
-use crate::{delay_us, spawn_task, timestamp};
-use esp_idf_svc::hal::cpu::Core::Core0;
+use crate::utils::{delay_us, timestamp};
+use crate::spawn_task;
 use esp_idf_svc::hal::gpio::AnyIOPin;
 use esp_idf_svc::hal::i2c::{I2c, I2cConfig, I2cDriver};
 use esp_idf_svc::hal::task::queue::Queue;
 use esp_idf_svc::hal::units::Hertz;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 use std::{array, thread};
+use std::time::Duration;
+use esp_idf_svc::hal::cpu::Core::Core0;
 
 #[derive(Debug, Copy, Clone)]
 pub struct PadInputEvent {
@@ -23,7 +24,13 @@ pub struct PadInputEvent {
     pub channel: u8,
     pub note: u8,
     pub velocity: u8,
-    pub midi_type: MidiType,
+    pub event_type: PadInputEventType,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum PadInputEventType {
+    MIDI(MidiType),
+    Debug
 }
 
 #[derive(Copy, Clone)]
@@ -100,7 +107,7 @@ fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<
                     channel: settings.channel,
                     note: settings.note,
                     velocity: velocity as u8,
-                    midi_type: MidiType::NoteOn,
+                    event_type: PadInputEventType::MIDI(MidiType::NoteOn),
                 })
             } else {
                 None
@@ -124,7 +131,7 @@ fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<
                 channel: settings.channel,
                 note: settings.note,
                 velocity: 0,
-                midi_type: MidiType::NoteOff,
+                event_type: PadInputEventType::MIDI(MidiType::NoteOff),
             })
         }
     }
@@ -198,6 +205,22 @@ impl PadsManager {
                             let value1 = ads1.read();
                             let value2 = ads2.read();
 
+                            /*
+                            queue.send_back(PadInputEvent {
+                                index: channel as u8,
+                                channel: 0,
+                                note: (value1 & 0xFF) as u8,
+                                velocity: ((value1 >> 8) & 0xFF) as u8,
+                                event_type: PadInputEventType::Debug
+                            }, 0).unwrap();
+                            queue.send_back(PadInputEvent {
+                                index: (channel + 4) as u8,
+                                channel: 0,
+                                note: (value2 & 0xFF) as u8,
+                                velocity: ((value2 >> 8) & 0xFF) as u8,
+                                event_type: PadInputEventType::Debug
+                            }, 0).unwrap();
+                            */
                             if let Some(item) = process_pad_physics(channel as u8, &mut pads_settings[channel], value1) {
                                 queue.send_back(item, 0).unwrap();
                             }

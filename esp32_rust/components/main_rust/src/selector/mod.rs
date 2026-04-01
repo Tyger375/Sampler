@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use esp_idf_svc::hal::gpio::{AnyInputPin, Input, InterruptType, PinDriver, Pull};
 use esp_idf_svc::hal::task::queue::Queue;
 use esp_idf_svc::sys::{gpio_get_level, gpio_intr_enable};
-use crate::get_time;
+use crate::utils::get_time;
 
 #[derive(Copy, Clone)]
 pub enum RotationEvent {
