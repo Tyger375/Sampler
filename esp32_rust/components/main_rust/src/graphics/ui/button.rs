@@ -6,10 +6,11 @@ pub struct UIButton {
 }
 
 impl UIButton {
-    pub fn new(text: String, on_click: Box<dyn Fn()>) -> Self {
+    pub fn new<F>(text: String, on_click: F) -> Self
+    where F: Fn() + 'static {
         UIButton {
             text,
-            on_click
+            on_click: Box::new(on_click)
         }
     }
 }

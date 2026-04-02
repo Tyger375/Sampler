@@ -15,8 +15,14 @@ use esp_idf_svc::hal::task::queue::Queue;
 use esp_idf_svc::hal::units::Hertz;
 use std::sync::{Arc, Mutex};
 use std::{array, thread};
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 use esp_idf_svc::hal::cpu::Core::Core0;
+
+pub struct PadButtonEvent {
+    pub index: u8,
+    pub pressed: bool
+}
 
 #[derive(Debug, Copy, Clone)]
 pub struct PadInputEvent {
@@ -141,6 +147,7 @@ pub struct PadsManager {
     settings: Arc<Mutex<[DrumPad; 8]>>,
     task_status: Arc<TaskState>,
     pads_midi_events: Arc<Queue<PadInputEvent>>,
+    pub paused: Arc<AtomicBool>
 }
 
 impl PadsManager {
@@ -251,6 +258,7 @@ impl PadsManager {
             settings,
             task_status,
             pads_midi_events: queue,
+            paused: Arc::new(AtomicBool::new(false))
         })
     }
 

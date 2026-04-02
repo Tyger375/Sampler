@@ -2,9 +2,9 @@ use crate::graphics::event::GraphicsEvent;
 use crate::graphics::ui::element::UIElement;
 
 pub struct ScreenData {
-    elements: Vec<Box<dyn UIElement>>,
-    row_offset: usize,
-    focus: bool
+    pub elements: Vec<Box<dyn UIElement>>,
+    pub row_offset: usize,
+    pub focus: bool
 }
 
 impl ScreenData {
@@ -18,6 +18,10 @@ impl ScreenData {
 
     pub fn add_element<T>(&mut self, item: T) where T: UIElement + 'static {
         self.elements.push(Box::new(item));
+    }
+
+    pub fn clear(&mut self) {
+        self.elements.clear();
     }
 }
 

@@ -19,10 +19,10 @@ impl HomeScreen {
         data.add_element(title);
 
         let nav = navigator.clone();
-        let button = UIButton::new("Settings".to_string(), Box::new(move || {
+        let button = UIButton::new("Settings".to_string(), move || {
             log::info!("Navigating to settings");
             nav.send("settings".to_string()).unwrap();
-        }));
+        });
         data.add_element(button);
 
         HomeScreen {

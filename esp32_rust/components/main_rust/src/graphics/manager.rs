@@ -93,8 +93,8 @@ impl<'a> GraphicsManager<'a> {
         }
     }
 
-    pub fn send_custom_event(&mut self, event: u32) {
+    pub fn send_custom_event(&mut self, event: u32) -> bool {
         let (_, screen) = self.current_screen.as_mut().expect("Current screen is null");
-        screen.on_custom_event(event);
+        screen.on_custom_event(event)
     }
 }

@@ -2,14 +2,14 @@ use crate::graphics::drivers::lcd1602::Lcd1602;
 use crate::graphics::event::GraphicsEvent;
 use crate::graphics::manager::GraphicsManager;
 use crate::midi::{MidiType, MIDI};
-use crate::pads::{PadInputEventType, PadsManager};
+use crate::pads::{PadButtonEvent, PadInputEventType, PadsManager};
 use crate::quantizer::Quantizer;
 use crate::screens::home::HomeScreen;
 use crate::screens::settings::SettingsScreen;
 use crate::selector::{RotationEvent, Selector, SelectorEvent};
 use crate::settings::components::config::ConfigComponent;
 use crate::settings::manager::SettingsManager;
-use crate::utils::log_main_stack;
+use crate::utils::{log_main_stack, timestamp};
 use crate::vendor::Vendor;
 use core::default::Default;
 use esp_idf_svc::hal::cpu::Core;
@@ -23,6 +23,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::{ptr, thread};
 use std::time::Duration;
 use esp_idf_svc::sys::{eNotifyAction_eIncrement, tskTaskControlBlock, ulTaskGenericNotifyTake, xTaskGenericNotify, xTaskGetCurrentTaskHandle};
+use crate::screens::pad_settings::PadSettings;
 
 pub mod ads1015;
 pub mod graphics;
@@ -202,10 +203,12 @@ extern "C" fn rust_main() {
         0x48,
         0x49,
     ).expect("Failed to create PadsManager");
+    let (pads_tx, pads_rx) = mpsc::channel();
 
     {
         let leds_tx = led_tx.clone();
         let queue = pads_manager.get_midi_events();
+        let paused = pads_manager.paused.clone();
         let _handle = spawn_task!({
             name: "pads_input_task",
             stack_size: 4096,
@@ -218,8 +221,15 @@ extern "C" fn rust_main() {
                         PadInputEventType::MIDI(midi_type) => {
                             let midi: (u8, u8) = midi_type.into();
 
-                            let bytes: [u8; 4] = [midi.0, midi.1 | (packet.channel & 0x0F), packet.note, packet.velocity];
-                            MIDI::send(&bytes);
+                            pads_tx.send(PadButtonEvent {
+                                index: packet.index,
+                                pressed: if let MidiType::NoteOn = midi_type { true } else { false }
+                            }).ok();
+
+                            if !paused.load(Ordering::Relaxed) {
+                                let bytes: [u8; 4] = [midi.0, midi.1 | (packet.channel & 0x0F), packet.note, packet.velocity];
+                                MIDI::send(&bytes);
+                            }
 
                             if let MidiType::NoteOn = midi_type {
                                 leds_tx.send((packet.index, true)).ok();
@@ -318,12 +328,25 @@ extern "C" fn rust_main() {
     graphics_manager.load_screen("home", HomeScreen::factory(navigator.clone()));
     graphics_manager.load_screen(
         "settings",
-        SettingsScreen::factory(settings_manager.clone()),
+        SettingsScreen::factory(
+            navigator.clone(),
+            settings_manager.clone()
+        ),
+    );
+    graphics_manager.load_screen(
+        "pad_settings",
+        PadSettings::factory(
+            pads_manager.paused.clone()
+        )
     );
 
     graphics_manager.navigate("home");
 
     graphics_manager.update();
+
+    let mut press_start_time = 0u32;
+    let mut pads_press_start_times = [0u32; 8];
+    const LONG_PRESS_THRESHOLD_MS: u32 = 500;
 
     loop {
         let mut needs_refresh: bool = false;
@@ -343,10 +366,31 @@ extern "C" fn rust_main() {
                 }
                 SelectorEvent::Click(press) => {
                     if press {
-                        graphics_manager.send_event(GraphicsEvent::Click);
+                        press_start_time = timestamp();
+                    } else {
+                        let duration = timestamp() - press_start_time;
+
+                        let event = if duration >= LONG_PRESS_THRESHOLD_MS {
+                            GraphicsEvent::Back
+                        } else {
+                            GraphicsEvent::Click
+                        };
+                        graphics_manager.send_event(event);
                         needs_refresh = true;
                     }
                 }
+            }
+        } else if let Ok(event) = pads_rx.try_recv() {
+            if event.pressed {
+                pads_press_start_times[event.index as usize] = timestamp();
+            } else {
+                let duration = timestamp() - pads_press_start_times[event.index as usize];
+
+                let mut custom_event = 0u32 | ((event.index & 0b111) as u32);
+                if duration >= LONG_PRESS_THRESHOLD_MS {
+                    custom_event |= 1 << 3;
+                }
+                needs_refresh = graphics_manager.send_custom_event(custom_event);
             }
         }
 

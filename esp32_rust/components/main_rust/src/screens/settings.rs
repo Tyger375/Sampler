@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use std::sync::mpsc::Sender;
 use crate::graphics::screen::{Screen, ScreenData};
+use crate::graphics::ui::button::UIButton;
 use crate::graphics::ui::intinput::{IntInputConfig, UIIntInput};
 use crate::graphics::ui::text::UIText;
 use crate::settings::components::config::ConfigComponent;
@@ -10,11 +12,12 @@ pub struct SettingsScreen {
 }
 
 impl SettingsScreen {
-    pub fn factory(settings: Arc<SettingsManager>) -> impl Fn() -> Box<dyn Screen> {
-        move || Box::new(SettingsScreen::new(settings.clone()))
+    pub fn factory(navigator: Sender<String>, settings: Arc<SettingsManager>) -> impl Fn() -> Box<dyn Screen> {
+        move || Box::new(SettingsScreen::new(navigator.clone(), settings.clone()))
     }
 
     pub fn new(
+        navigator: Sender<String>,
         settings: Arc<SettingsManager>
     ) -> Self {
         let mut data = ScreenData::new();
@@ -48,6 +51,13 @@ impl SettingsScreen {
                     });
                 })
             }, bpm as i32
+        ));
+
+        data.add_element(UIButton::new(
+            "Pad Settings".to_string(),
+            move || {
+                navigator.clone().send("pad_settings".to_string()).unwrap();
+            }
         ));
 
         SettingsScreen {
