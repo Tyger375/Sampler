@@ -120,9 +120,14 @@ extern "C" bool midi_mounted()
     return tud_midi_mounted();
 }
 
+/* Vendor */
 extern "C" void vendor_out(const char* packet, const size_t length)
 {
     tud_vendor_write(packet, length);
+}
+extern "C" uint32_t vendor_in(char* packet, const size_t length)
+{
+    return tud_vendor_read(packet, length);
 }
 
 extern "C" void vendor_flush()
@@ -130,6 +135,16 @@ extern "C" void vendor_flush()
     tud_vendor_flush();
 }
 
+extern "C" uint32_t vendor_available()
+{
+    return tud_vendor_available();
+}
+extern "C" uint32_t vendor_write_available()
+{
+    return tud_vendor_write_available();
+}
+
+/* Other utils */
 extern "C" void esp_delay_us(const uint32_t micros)
 {
     esp_rom_delay_us(micros);

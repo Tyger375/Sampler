@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::fs;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc::Sender;
@@ -30,6 +31,8 @@ impl SettingsComponent for ConfigComponent {
 }
 
 impl ConfigComponent {
+    const FILENAME: &str = "/data/config.toml";
+
     pub fn new(
         settings_tx: Sender<String>
     ) -> Self {
@@ -42,6 +45,10 @@ impl ConfigComponent {
         component
     }
 
+    pub fn direct_read(&self) -> String {
+        fs::read_to_string(Self::FILENAME).unwrap_or(String::new())
+    }
+
     pub fn unwrap_data(&self) {
         let guard = self.data.lock().unwrap();
 
@@ -49,7 +56,7 @@ impl ConfigComponent {
     }
 
     pub fn on_load(&self) {
-        let config = load_config::<ConfigData>("/data/config.toml");
+        let config = load_config::<ConfigData>(Self::FILENAME);
 
         {
             let mut guard = self.data.lock().unwrap();
@@ -64,7 +71,7 @@ impl ConfigComponent {
             let guard = self.data.lock().unwrap();
             guard.clone()
         };
-        save_config::<ConfigData>("/data/config.toml", &data);
+        save_config::<ConfigData>(Self::FILENAME, &data);
         log::info!(target: "ConfigComponent", "Saved!");
 
         self.unwrap_data();

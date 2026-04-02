@@ -18,10 +18,11 @@ use esp_idf_svc::hal::i2c::{I2cConfig, I2cDriver};
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::task::notification::Notification;
 use esp_idf_svc::hal::units::Hertz;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicPtr, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
-use std::thread;
+use std::{ptr, thread};
 use std::time::Duration;
+use esp_idf_svc::sys::{eNotifyAction_eIncrement, tskTaskControlBlock, ulTaskGenericNotifyTake, xTaskGenericNotify, xTaskGetCurrentTaskHandle};
 
 pub mod ads1015;
 pub mod graphics;
@@ -38,6 +39,24 @@ pub mod vendor;
 enum SequencerMessage {
     NoteOn(u8),
     NoteOff(u8),
+}
+
+static VENDOR_TASK_H: AtomicPtr<tskTaskControlBlock> = AtomicPtr::new(ptr::null_mut());
+
+#[no_mangle]
+extern "C" fn tud_vendor_rx_cb(_itf: u8) {
+    let handle = VENDOR_TASK_H.load(Ordering::Relaxed);
+    if !handle.is_null() {
+        unsafe {
+            xTaskGenericNotify(
+                handle,
+                0,
+                0,
+                eNotifyAction_eIncrement,
+                ptr::null_mut()
+            );
+        }
+    }
 }
 
 #[no_mangle]
@@ -72,6 +91,65 @@ extern "C" fn rust_main() {
                         log::info!("Setting new bpm: {}", bpm);
                         quantizer_tx.send(bpm).unwrap();
                     });
+                }
+            }
+        });
+    }
+
+    // Vendor
+    {
+        let settings = settings_manager.clone();
+        let _handle = spawn_task!({
+            name: "vendor_rx",
+            stack_size: 4096,
+            priority: 4,
+        }, move || {
+            let current_handle = unsafe { xTaskGetCurrentTaskHandle() };
+            VENDOR_TASK_H.store(current_handle, Ordering::SeqCst);
+
+            let mut message = String::new();
+
+            loop {
+                unsafe {
+                    ulTaskGenericNotifyTake(0, 1, delay::BLOCK);
+                }
+
+                while Vendor::available() > 0 {
+                    let chunk = Vendor::read(64);
+                    if chunk.is_empty() {
+                        continue;
+                    }
+
+                    message.push_str(&chunk);
+                    while let Some(pos) = message.find("\n") {
+                        let cmd: String = message.drain(..pos + 1).collect();
+                        let cmd = cmd.trim();
+
+                        if cmd.is_empty() {
+                            continue;
+                        }
+
+                        log::info!("Vendor Received: {}", cmd);
+
+                        let results: Vec<String> = cmd
+                            .split_whitespace()
+                            .map(|s| s.to_string())
+                            .collect();
+
+                        if !results.is_empty() {
+                            // On Vendor CMD
+                            match results[0].as_str() {
+                                "READ_CONFIG" => {
+                                    settings.get_component::<ConfigComponent, _, _>("config", |component| {
+                                        Vendor::respond(component.direct_read())
+                                    });
+                                }
+                                _ => {
+                                    log::warn!("Unknown USB command: {}", results[0]);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -151,7 +229,7 @@ extern "C" fn rust_main() {
                         }
                         PadInputEventType::Debug => {
                             let value = (packet.note as u16) | ((packet.velocity as u16) << 8);
-                            Vendor::write(&format!("{}: {}", packet.index, value));
+                            Vendor::write_raw(&format!("{}: {}", packet.index, value));
                             Vendor::flush();
                         }
                     }
