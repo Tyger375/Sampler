@@ -1,6 +1,22 @@
 use std::ptr;
 use esp_idf_svc::sys::uxTaskGetStackHighWaterMark;
 
+pub const MAX_MIDI_NOTE: u8 = 127;
+pub const MAX_MIDI_CHANNELS: u8 = 16;
+
+const NOTE_NAMES: [&str; 12] = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+pub fn int_to_note(note: i32) -> String {
+    if note < 0 || note > MAX_MIDI_NOTE as i32 {
+        return String::new()
+    }
+
+    let octave = (note / 12) - 1;
+    let name_index = note % 12;
+
+    format!("{}{}", NOTE_NAMES[name_index as usize], octave)
+}
+
 extern "C" {
     fn esp_delay_us(micros: u32);
     fn log_timestamp() -> u32;

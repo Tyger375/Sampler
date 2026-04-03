@@ -8,13 +8,13 @@ use crate::settings::component::SettingsComponent;
 
 const TAG: &'static str = "SettingsManager";
 
-pub struct SettingsManager {
+pub struct SettingsManager<C> {
     components: Mutex<HashMap<&'static str, Box<dyn SettingsComponent>>>,
-    tx: Sender<String>
+    tx: Sender<C>
 }
 
-impl SettingsManager {
-    pub fn new() -> Result<(Self, Receiver<String>, MountedLittlefs<Littlefs<CString>>), anyhow::Error> {
+impl<C> SettingsManager<C> {
+    pub fn new() -> Result<(Self, Receiver<C>, MountedLittlefs<Littlefs<CString>>), anyhow::Error> {
         log::info!(target: TAG, "Mounting LittleFS...");
 
         let mounted_littlefs = unsafe {
@@ -36,7 +36,7 @@ impl SettingsManager {
     pub fn add_component<T, F>(&self, id: &'static str, f: F)
     where
         T: SettingsComponent,
-        F: FnOnce(Sender<String>) -> T {
+        F: FnOnce(Sender<C>) -> T {
         let mut components = self.components.lock().unwrap();
         components.insert(id, Box::new(f(self.tx.clone())));
     }

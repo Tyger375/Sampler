@@ -15,9 +15,11 @@ use esp_idf_svc::hal::task::queue::Queue;
 use esp_idf_svc::hal::units::Hertz;
 use std::sync::{Arc, Mutex};
 use std::{array, thread};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use esp_idf_svc::hal::cpu::Core::Core0;
+use serde::{Deserialize, Serialize};
+use crate::settings_components::pads::PadConfig;
 
 pub struct PadButtonEvent {
     pub index: u8,
@@ -47,7 +49,8 @@ pub enum PadState {
     Release,
 }
 
-#[derive(Copy, Clone)]
+#[repr(u8)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub enum PadPressType {
     OneShot,
 }
@@ -146,8 +149,7 @@ fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<
 pub struct PadsManager {
     settings: Arc<Mutex<[DrumPad; 8]>>,
     task_status: Arc<TaskState>,
-    pads_midi_events: Arc<Queue<PadInputEvent>>,
-    pub paused: Arc<AtomicBool>
+    pub pads_midi_events: Arc<Queue<PadInputEvent>>
 }
 
 impl PadsManager {
@@ -245,6 +247,7 @@ impl PadsManager {
                             thread::sleep(Duration::from_secs(1));
                         }
                         TaskStatus::Updating => {
+                            log::info!("Update requested: updating pads_settings");
                             let guard = settings.lock().unwrap();
                             pads_settings = *guard;
                             task_status.set(TaskStatus::Running);
@@ -257,20 +260,19 @@ impl PadsManager {
         Ok(PadsManager {
             settings,
             task_status,
-            pads_midi_events: queue,
-            paused: Arc::new(AtomicBool::new(false))
+            pads_midi_events: queue
         })
     }
 
-    pub fn get_pad_settings(&self) -> Arc<Mutex<[DrumPad; 8]>> {
-        self.settings.clone()
-    }
-
-    pub fn commit_pad_settings(&self) {
+    pub fn request_update_settings(&self, configs: &[PadConfig; 8]) {
+        let mut guard = self.settings.lock().unwrap();
+        for (i, item) in guard.iter_mut().enumerate() {
+            let config = &configs[i];
+            item.note = config.note;
+            item.channel = config.channel;
+            item.press_type = config.press_type;
+            item.threshold = config.threshold;
+        }
         self.task_status.set(TaskStatus::Updating);
-    }
-
-    pub fn get_midi_events(&self) -> Arc<Queue<PadInputEvent>> {
-        self.pads_midi_events.clone()
     }
 }

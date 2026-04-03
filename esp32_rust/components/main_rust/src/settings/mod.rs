@@ -6,10 +6,6 @@ use serde::de::DeserializeOwned;
 pub mod manager;
 pub mod component;
 
-pub mod components {
-    pub mod config;
-}
-
 pub fn load_config<T>(path: &str) -> T
 where T: Serialize + DeserializeOwned + Default {
     if let Ok(content) = fs::read_to_string(path) {

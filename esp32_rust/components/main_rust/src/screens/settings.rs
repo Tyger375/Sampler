@@ -4,21 +4,23 @@ use crate::graphics::screen::{Screen, ScreenData};
 use crate::graphics::ui::button::UIButton;
 use crate::graphics::ui::intinput::{IntInputConfig, UIIntInput};
 use crate::graphics::ui::text::UIText;
-use crate::settings::components::config::ConfigComponent;
+use crate::navigator::{Navigator, NavigatorMessage};
 use crate::settings::manager::SettingsManager;
+use crate::settings_components::config::ConfigComponent;
+use crate::settings_components::SettingsEvent;
 
 pub struct SettingsScreen {
     data: ScreenData
 }
 
 impl SettingsScreen {
-    pub fn factory(navigator: Sender<String>, settings: Arc<SettingsManager>) -> impl Fn() -> Box<dyn Screen> {
+    pub fn factory(navigator: Navigator, settings: Arc<SettingsManager<SettingsEvent>>) -> impl Fn() -> Box<dyn Screen> {
         move || Box::new(SettingsScreen::new(navigator.clone(), settings.clone()))
     }
 
     pub fn new(
-        navigator: Sender<String>,
-        settings: Arc<SettingsManager>
+        navigator: Navigator,
+        settings: Arc<SettingsManager<SettingsEvent>>
     ) -> Self {
         let mut data = ScreenData::new();
 
@@ -56,7 +58,7 @@ impl SettingsScreen {
         data.add_element(UIButton::new(
             "Pad Settings".to_string(),
             move || {
-                navigator.clone().send("pad_settings".to_string()).unwrap();
+                navigator.clone().send(NavigatorMessage::Navigate("pad_settings".to_string())).unwrap();
             }
         ));
 

@@ -22,6 +22,9 @@ impl<'a> GraphicsManager<'a> {
 
     pub fn load_screen<F>(&mut self, id: &'a str, factory: F)
     where F: Fn() -> Box<dyn Screen> + 'static {
+        if id == "back" {
+            panic!("Invalid screen ID ({})", id);
+        }
         self.screens_factories.insert(id, Box::new(factory));
     }
 

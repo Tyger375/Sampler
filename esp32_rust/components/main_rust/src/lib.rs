@@ -7,7 +7,6 @@ use crate::quantizer::Quantizer;
 use crate::screens::home::HomeScreen;
 use crate::screens::settings::SettingsScreen;
 use crate::selector::{RotationEvent, Selector, SelectorEvent};
-use crate::settings::components::config::ConfigComponent;
 use crate::settings::manager::SettingsManager;
 use crate::utils::{log_main_stack, timestamp};
 use crate::vendor::Vendor;
@@ -18,12 +17,16 @@ use esp_idf_svc::hal::i2c::{I2cConfig, I2cDriver};
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::task::notification::Notification;
 use esp_idf_svc::hal::units::Hertz;
-use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::{ptr, thread};
 use std::time::Duration;
 use esp_idf_svc::sys::{eNotifyAction_eIncrement, tskTaskControlBlock, ulTaskGenericNotifyTake, xTaskGenericNotify, xTaskGetCurrentTaskHandle};
+use crate::navigator::NavigatorMessage;
 use crate::screens::pad_settings::PadSettings;
+use crate::settings_components::config::ConfigComponent;
+use crate::settings_components::pads::PadsComponent;
+use crate::settings_components::SettingsEvent;
 
 pub mod ads1015;
 pub mod graphics;
@@ -33,9 +36,11 @@ pub mod quantizer;
 pub mod screens;
 pub mod selector;
 pub mod settings;
+pub mod settings_components;
 pub mod task;
 pub mod utils;
 pub mod vendor;
+pub mod navigator;
 
 enum SequencerMessage {
     NoteOn(u8),
@@ -68,30 +73,49 @@ extern "C" fn rust_main() {
 
     // Bind the log crate to the ESP Logging facilities
     esp_idf_svc::log::EspLogger::initialize_default();
+    let peripherals = Peripherals::take().unwrap();
 
     let (quantizer_tx, quantizer_rx) = mpsc::channel::<u8>();
+    let pads_manager = PadsManager::new(
+        peripherals.i2c0,
+        peripherals.pins.gpio12.into(),
+        peripherals.pins.gpio11.into(),
+        0x48,
+        0x49,
+    ).expect("Failed to create PadsManager");
+    let pads_manager = Arc::new(pads_manager);
 
     // Settings
     let (settings_manager, settings_rx, littlefs) =
         SettingsManager::new().expect("Failed to create SettingsManager");
     core::mem::forget(littlefs);
-    let settings_manager: Arc<SettingsManager> = Arc::new(settings_manager);
+    let settings_manager: Arc<SettingsManager<SettingsEvent>> = Arc::new(settings_manager);
 
     settings_manager.add_component("config", |tx| ConfigComponent::new(tx));
+    settings_manager.add_component("pads", |tx| PadsComponent::new(tx));
 
     log_main_stack("After add_component");
 
     {
         let settings = settings_manager.clone();
+        let pads_manager = pads_manager.clone();
         thread::spawn(move || loop {
             if let Ok(item) = settings_rx.recv() {
-                if item == "config_bpm" {
-                    settings.get_component("config", |component: &ConfigComponent| {
-                        component.save();
-                        let bpm = component.bpm();
-                        log::info!("Setting new bpm: {}", bpm);
-                        quantizer_tx.send(bpm).unwrap();
-                    });
+                match item {
+                    SettingsEvent::ConfigBpm => {
+                        settings.get_component("config", |component: &ConfigComponent| {
+                            component.save();
+                            let bpm = component.bpm();
+                            log::info!("Setting new bpm: {}", bpm);
+                            quantizer_tx.send(bpm).unwrap();
+                        });
+                    }
+                    SettingsEvent::PadConfig => {
+                        settings.get_component::<PadsComponent, _, _>("pads", |component| {
+                            component.save();
+                            pads_manager.request_update_settings(&component.get_configs());
+                        });
+                    }
                 }
             }
         });
@@ -156,8 +180,6 @@ extern "C" fn rust_main() {
         });
     }
 
-    let peripherals = Peripherals::take().unwrap();
-
     let config = I2cConfig::new().baudrate(Hertz(400_000));
     let i2c_master = I2cDriver::new(
         peripherals.i2c1,
@@ -196,19 +218,13 @@ extern "C" fn rust_main() {
     });
 
     // Pads manager
-    let pads_manager = PadsManager::new(
-        peripherals.i2c0,
-        peripherals.pins.gpio12.into(),
-        peripherals.pins.gpio11.into(),
-        0x48,
-        0x49,
-    ).expect("Failed to create PadsManager");
     let (pads_tx, pads_rx) = mpsc::channel();
+    let pads_midi_paused = Arc::new(AtomicBool::new(false));
 
     {
         let leds_tx = led_tx.clone();
-        let queue = pads_manager.get_midi_events();
-        let paused = pads_manager.paused.clone();
+        let queue = pads_manager.pads_midi_events.clone();
+        let paused = pads_midi_paused.clone();
         let _handle = spawn_task!({
             name: "pads_input_task",
             stack_size: 4096,
@@ -323,7 +339,7 @@ extern "C" fn rust_main() {
     // Graphics
     let mut graphics_manager = GraphicsManager::new();
     graphics_manager.install_driver(Lcd1602::new(i2c_master.clone(), 0x27));
-    let (navigator, navigator_rx) = mpsc::channel::<String>();
+    let (navigator, navigator_rx) = mpsc::channel::<NavigatorMessage>();
 
     graphics_manager.load_screen("home", HomeScreen::factory(navigator.clone()));
     graphics_manager.load_screen(
@@ -336,7 +352,9 @@ extern "C" fn rust_main() {
     graphics_manager.load_screen(
         "pad_settings",
         PadSettings::factory(
-            pads_manager.paused.clone()
+            navigator.clone(),
+            pads_midi_paused.clone(),
+            settings_manager.clone()
         )
     );
 
@@ -351,8 +369,12 @@ extern "C" fn rust_main() {
     loop {
         let mut needs_refresh: bool = false;
 
-        if let Ok(route) = navigator_rx.try_recv() {
-            graphics_manager.navigate(&route);
+        if let Ok(message) = navigator_rx.try_recv() {
+            match message {
+                NavigatorMessage::Navigate(route) => graphics_manager.navigate(&route),
+                NavigatorMessage::Back => graphics_manager.navigate_back(),
+                NavigatorMessage::GraphicsEvent(event) => graphics_manager.send_event(event)
+            }
             needs_refresh = true;
         } else if let Some((res, _)) = selector_queue.recv_front(delay::NON_BLOCK) {
             match res {

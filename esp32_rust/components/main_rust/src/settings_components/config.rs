@@ -6,6 +6,7 @@ use std::sync::mpsc::Sender;
 use serde::{Deserialize, Serialize};
 use crate::settings::component::SettingsComponent;
 use crate::settings::{load_config, save_config};
+use crate::settings_components::SettingsEvent;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ConfigData {
@@ -21,7 +22,7 @@ impl Default for ConfigData {
 }
 
 pub struct ConfigComponent {
-    settings_tx: Sender<String>,
+    settings_tx: Sender<SettingsEvent>,
     data: Mutex<ConfigData>,
     bpm: Arc<AtomicU8>
 }
@@ -34,7 +35,7 @@ impl ConfigComponent {
     const FILENAME: &str = "/data/config.toml";
 
     pub fn new(
-        settings_tx: Sender<String>
+        settings_tx: Sender<SettingsEvent>
     ) -> Self {
         let component = ConfigComponent {
             data: Mutex::new(ConfigData::default()),
@@ -49,7 +50,7 @@ impl ConfigComponent {
         fs::read_to_string(Self::FILENAME).unwrap_or(String::new())
     }
 
-    pub fn unwrap_data(&self) {
+    fn unwrap_data(&self) {
         let guard = self.data.lock().unwrap();
 
         self.bpm.store(guard.bpm, Ordering::Relaxed);
@@ -77,6 +78,10 @@ impl ConfigComponent {
         self.unwrap_data();
     }
 
+    pub fn commit(&self) {
+        self.settings_tx.send(SettingsEvent::ConfigBpm).unwrap();
+    }
+
     pub fn bpm(&self) -> u8 {
         self.bpm.load(Ordering::Relaxed)
         /*let guard = self.data.lock().unwrap();
@@ -88,6 +93,5 @@ impl ConfigComponent {
             let mut guard = self.data.lock().unwrap();
             guard.bpm = bpm;
         }
-        self.settings_tx.send("config_bpm".to_string()).unwrap();
     }
 }
