@@ -1,5 +1,5 @@
 use crate::graphics::event::GraphicsEvent;
-use crate::graphics::ui::element::UIElement;
+use crate::graphics::ui::element::{UIElement, UIElementState};
 
 pub struct IntInputConfig {
     pub text: String,
@@ -38,8 +38,12 @@ impl UIIntInput {
 }
 
 impl UIElement for UIIntInput {
-    fn render(&self, selected: bool) -> String {
-        let prefix = if selected { ">" } else { "" };
+    fn render(&self, state: UIElementState) -> String {
+        let prefix = match state {
+            UIElementState::Selected => ">",
+            UIElementState::SelectorPress => "\\",
+            UIElementState::None => ""
+        };
         format!("{}{}: {}", prefix, self.config.text, (self.config.format_value)(self.value))
     }
 

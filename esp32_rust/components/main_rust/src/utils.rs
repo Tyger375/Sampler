@@ -46,3 +46,65 @@ pub fn log_main_stack(label: &str) {
     log::info!("--- Stack Report [{}] ---", label);
     log::info!("Min free stack: {} bytes", stack_bytes);
 }
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct CustomGraphicsEvent {
+    data: u32
+}
+
+impl From<u32> for CustomGraphicsEvent {
+    fn from(value: u32) -> Self {
+        CustomGraphicsEvent {
+            data: value
+        }
+    }
+}
+
+impl From<CustomGraphicsEvent> for u32 {
+    fn from(value: CustomGraphicsEvent) -> Self {
+        value.data
+    }
+}
+
+impl CustomGraphicsEvent {
+    const CHANNEL_MASK: u32 = 0b111;
+    const LONG_CLICK_BIT: u32 = 1 << 3;
+    const SHORTCUT_BIT: u32 = 1 << 4;
+
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_channel(mut self, channel: u8) -> Self {
+        self.data = (self.data & !Self::CHANNEL_MASK) | (channel as u32 & 0b111);
+        self
+    }
+
+    pub fn set_long_click(&mut self, is_long: bool) {
+        if is_long {
+            self.data |= Self::LONG_CLICK_BIT;
+        } else {
+            self.data &= !Self::LONG_CLICK_BIT;
+        }
+    }
+
+    pub fn set_shortcut(&mut self, is_shortcut: bool) {
+        if is_shortcut {
+            self.data |= Self::SHORTCUT_BIT;
+        } else {
+            self.data &= !Self::LONG_CLICK_BIT;
+        }
+    }
+
+    pub fn get_channel(&self) -> u8 {
+        (self.data & Self::CHANNEL_MASK) as u8
+    }
+
+    pub fn is_long_click(&self) -> bool {
+        (self.data & Self::LONG_CLICK_BIT) != 0
+    }
+
+    pub fn is_shortcut(&self) -> bool {
+        (self.data & Self::SHORTCUT_BIT) != 0
+    }
+}

@@ -1,4 +1,5 @@
 use crate::graphics::{event::GraphicsEvent, ui::element::UIElement};
+use crate::graphics::ui::element::UIElementState;
 
 pub struct UIButton {
     text: String,
@@ -16,11 +17,11 @@ impl UIButton {
 }
 
 impl UIElement for UIButton {
-    fn render(&self, selected: bool) -> String {
-        let prefix = if selected {
-            ">"
-        } else {
-            ""
+    fn render(&self, state: UIElementState) -> String {
+        let prefix = match state {
+            UIElementState::Selected => ">",
+            UIElementState::SelectorPress => "\\",
+            UIElementState::None => ""
         };
         format!("{}{}", prefix, self.text)
     }

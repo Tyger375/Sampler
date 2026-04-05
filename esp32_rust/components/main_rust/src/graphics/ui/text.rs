@@ -1,4 +1,4 @@
-use crate::graphics::ui::element::UIElement;
+use crate::graphics::ui::element::{UIElement, UIElementState};
 
 pub struct UIText {
     text: String
@@ -11,11 +11,11 @@ impl UIText {
 }
 
 impl UIElement for UIText {
-    fn render(&self, selected: bool) -> String {
-        let prefix = if selected {
-            ">"
-        } else {
-            ""
+    fn render(&self, state: UIElementState) -> String {
+        let prefix = match state {
+            UIElementState::Selected => ">",
+            UIElementState::SelectorPress => "\\",
+            UIElementState::None => ""
         };
         format!("{}{}", prefix, self.text)
     }

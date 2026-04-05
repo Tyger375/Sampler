@@ -43,7 +43,7 @@ impl<C> SettingsManager<C> {
 
     pub fn get_component<T, F, R>(
         &self,
-        id: &'static str,
+        id: &str,
         f: F
     ) -> Option<R>
     where
@@ -55,5 +55,12 @@ impl<C> SettingsManager<C> {
         components.get(id).and_then(|boxed| {
             boxed.as_any().downcast_ref::<T>()
         }).map(f)
+    }
+
+    pub fn direct_read(&self, id: &str, args: &Vec<&str>) -> String {
+        let components = self.components.lock().unwrap();
+        components.get(id).map_or(String::new(), |component| {
+            component.direct_read(args)
+        })
     }
 }

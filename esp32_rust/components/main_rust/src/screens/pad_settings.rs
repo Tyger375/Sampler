@@ -10,7 +10,7 @@ use crate::navigator::{Navigator, NavigatorMessage};
 use crate::settings::manager::SettingsManager;
 use crate::settings_components::pads::PadsComponent;
 use crate::settings_components::SettingsEvent;
-use crate::utils::{int_to_note, MAX_MIDI_CHANNELS, MAX_MIDI_NOTE};
+use crate::utils::{int_to_note, CustomGraphicsEvent, MAX_MIDI_CHANNELS, MAX_MIDI_NOTE};
 
 pub struct PadSettings {
     page_focus: i8,
@@ -185,12 +185,11 @@ impl Screen for PadSettings {
     }
 
     fn on_custom_event(&mut self, event: u32) -> bool {
-        let channel: u8 = (event & 0b111) as u8;
-        let long_press = (event & 0b1000) > 0;
+        let event: CustomGraphicsEvent = event.into();
 
-        log::info!("Custom event: {} {}", long_press, channel);
-        if !long_press && self.page_focus < 0 {
-            self.page_focus = channel as i8;
+        log::info!("Custom event: {} {}", event.is_long_click(), event.get_channel());
+        if !event.is_long_click() && !event.is_shortcut() && self.page_focus < 0 {
+            self.page_focus = event.get_channel() as i8;
             self.pad_selected();
             return true;
         }

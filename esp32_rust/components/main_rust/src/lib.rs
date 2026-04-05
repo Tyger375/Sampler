@@ -2,13 +2,20 @@ use crate::graphics::drivers::lcd1602::Lcd1602;
 use crate::graphics::event::GraphicsEvent;
 use crate::graphics::manager::GraphicsManager;
 use crate::midi::{MidiType, MIDI};
+use crate::navigator::NavigatorMessage;
 use crate::pads::{PadButtonEvent, PadInputEventType, PadsManager};
 use crate::quantizer::Quantizer;
 use crate::screens::home::HomeScreen;
+use crate::screens::pad_settings::PadSettings;
 use crate::screens::settings::SettingsScreen;
 use crate::selector::{RotationEvent, Selector, SelectorEvent};
+use crate::sequencer::{Sequencer, SequencerResolution};
 use crate::settings::manager::SettingsManager;
-use crate::utils::{log_main_stack, timestamp};
+use crate::settings_components::config::ConfigComponent;
+use crate::settings_components::pads::PadsComponent;
+use crate::settings_components::shortcuts::{Shortcut, ShortcutsComponent};
+use crate::settings_components::SettingsEvent;
+use crate::utils::{log_main_stack, timestamp, CustomGraphicsEvent};
 use crate::vendor::Vendor;
 use core::default::Default;
 use esp_idf_svc::hal::cpu::Core;
@@ -17,30 +24,29 @@ use esp_idf_svc::hal::i2c::{I2cConfig, I2cDriver};
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::hal::task::notification::Notification;
 use esp_idf_svc::hal::units::Hertz;
+use esp_idf_svc::sys::{
+    eNotifyAction_eIncrement, tskTaskControlBlock, ulTaskGenericNotifyTake, xTaskGenericNotify,
+    xTaskGetCurrentTaskHandle,
+};
 use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
-use std::{ptr, thread};
 use std::time::Duration;
-use esp_idf_svc::sys::{eNotifyAction_eIncrement, tskTaskControlBlock, ulTaskGenericNotifyTake, xTaskGenericNotify, xTaskGetCurrentTaskHandle};
-use crate::navigator::NavigatorMessage;
-use crate::screens::pad_settings::PadSettings;
-use crate::settings_components::config::ConfigComponent;
-use crate::settings_components::pads::PadsComponent;
-use crate::settings_components::SettingsEvent;
+use std::{ptr, thread};
 
 pub mod ads1015;
 pub mod graphics;
 pub mod midi;
+pub mod navigator;
 pub mod pads;
 pub mod quantizer;
 pub mod screens;
 pub mod selector;
+mod sequencer;
 pub mod settings;
 pub mod settings_components;
 pub mod task;
 pub mod utils;
 pub mod vendor;
-pub mod navigator;
 
 enum SequencerMessage {
     NoteOn(u8),
@@ -54,13 +60,7 @@ extern "C" fn tud_vendor_rx_cb(_itf: u8) {
     let handle = VENDOR_TASK_H.load(Ordering::Relaxed);
     if !handle.is_null() {
         unsafe {
-            xTaskGenericNotify(
-                handle,
-                0,
-                0,
-                eNotifyAction_eIncrement,
-                ptr::null_mut()
-            );
+            xTaskGenericNotify(handle, 0, 0, eNotifyAction_eIncrement, ptr::null_mut());
         }
     }
 }
@@ -82,7 +82,8 @@ extern "C" fn rust_main() {
         peripherals.pins.gpio11.into(),
         0x48,
         0x49,
-    ).expect("Failed to create PadsManager");
+    )
+    .expect("Failed to create PadsManager");
     let pads_manager = Arc::new(pads_manager);
 
     // Settings
@@ -91,15 +92,22 @@ extern "C" fn rust_main() {
     core::mem::forget(littlefs);
     let settings_manager: Arc<SettingsManager<SettingsEvent>> = Arc::new(settings_manager);
 
+    log_main_stack("After adding components");
+
     settings_manager.add_component("config", |tx| ConfigComponent::new(tx));
     settings_manager.add_component("pads", |tx| PadsComponent::new(tx));
+    settings_manager.add_component("shortcuts", |tx| ShortcutsComponent::new(tx));
 
-    log_main_stack("After add_component");
+    log_main_stack("After adding components");
 
     {
         let settings = settings_manager.clone();
         let pads_manager = pads_manager.clone();
-        thread::spawn(move || loop {
+        spawn_task!({
+            name: "settings",
+            stack_size: 4096,
+            priority: 6,
+        }, move || loop {
             if let Ok(item) = settings_rx.recv() {
                 match item {
                     SettingsEvent::ConfigBpm => {
@@ -124,7 +132,7 @@ extern "C" fn rust_main() {
     // Vendor
     {
         let settings = settings_manager.clone();
-        let _handle = spawn_task!({
+        spawn_task!({
             name: "vendor_rx",
             stack_size: 4096,
             priority: 4,
@@ -156,18 +164,22 @@ extern "C" fn rust_main() {
 
                         log::info!("Vendor Received: {}", cmd);
 
-                        let results: Vec<String> = cmd
+                        let results: Vec<&str> = cmd
                             .split_whitespace()
-                            .map(|s| s.to_string())
+                            .map(|s| s)
                             .collect();
 
                         if !results.is_empty() {
                             // On Vendor CMD
-                            match results[0].as_str() {
+                            match results[0] {
                                 "READ_CONFIG" => {
-                                    settings.get_component::<ConfigComponent, _, _>("config", |component| {
-                                        Vendor::respond(component.direct_read())
-                                    });
+                                    if let Some(component_name) = results.get(1) {
+                                        let args = results.get(2..).unwrap_or(&[]);
+                                        let result = settings.direct_read(component_name, &Vec::from(args));
+                                        Vendor::respond(result);
+                                    } else {
+                                        Vendor::respond("invalid args".to_string());
+                                    }
                                 }
                                 _ => {
                                     log::warn!("Unknown USB command: {}", results[0]);
@@ -186,14 +198,19 @@ extern "C" fn rust_main() {
         peripherals.pins.gpio21,
         peripherals.pins.gpio18,
         &config,
-    ).unwrap();
+    )
+    .unwrap();
     let i2c_master = Arc::new(Mutex::new(i2c_master));
 
     // LEDs manager
     let (led_tx, led_rx) = mpsc::channel::<(u8, bool)>();
     let led_i2c = i2c_master.clone();
 
-    thread::spawn(move || {
+    spawn_task!({
+        name: "leds_manager",
+        stack_size: 2048,
+        priority: 10,
+    }, move || {
         // LEDs: setting I2C extender PINs to OUTPUT
         let mut leds = 0u8;
         {
@@ -266,30 +283,42 @@ extern "C" fn rust_main() {
 
     // Sequencer
     let (sequencer_tx, sequencer_channel) = mpsc::channel::<SequencerMessage>();
+    let sequencer = Arc::new(Sequencer::new());
 
-    let _handle = spawn_task!({
-        name: "sequencer_task",
-        stack_size: 4096,
-        priority: 23,
-        pin_to_core: Some(Core::Core1),
-    }, move || {
-        loop {
-            if let Ok(item) = sequencer_channel.recv() {
-                match item {
-                    SequencerMessage::NoteOn(_step) => {
-                        /*if (step % 4) == 0 {
-                            MIDI::send(&[0x09, 0x90, 70, 127]);
-                        }*/
-                    }
-                    SequencerMessage::NoteOff(_step) => {
-                        /*if (step % 4) == 0 {
-                            MIDI::send(&[0x08, 0x80, 70, 0]);
-                        }*/
+    /*
+    sequencer.new_project("Project".to_string(), 1);
+    sequencer.add_track();
+    sequencer.edit_track(0, |track| {
+        track.resolution = SequencerResolution::Beat;
+        track.triggers.push(0);
+        track.triggers.push(1);
+        track.triggers.push(2);
+        track.triggers.push(3);
+    });
+    */
+
+    {
+        let sequencer = sequencer.clone();
+        let _handle = spawn_task!({
+            name: "sequencer_task",
+            stack_size: 4096,
+            priority: 23,
+            pin_to_core: Some(Core::Core1),
+        }, move || {
+            loop {
+                if let Ok(item) = sequencer_channel.recv() {
+                    match item {
+                        SequencerMessage::NoteOn(step) => {
+                            sequencer.step_trigger_on(step);
+                        }
+                        SequencerMessage::NoteOff(step) => {
+                            sequencer.step_trigger_off(step);
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 
     // Quantizer
     {
@@ -333,7 +362,8 @@ extern "C" fn rust_main() {
         peripherals.pins.gpio8.into(),
         peripherals.pins.gpio7.into(),
         peripherals.pins.gpio9.into(),
-    ).expect("Failed to create Selector");
+    )
+    .expect("Failed to create Selector");
     let selector_queue = selector.get_queue();
 
     // Graphics
@@ -344,24 +374,22 @@ extern "C" fn rust_main() {
     graphics_manager.load_screen("home", HomeScreen::factory(navigator.clone()));
     graphics_manager.load_screen(
         "settings",
-        SettingsScreen::factory(
-            navigator.clone(),
-            settings_manager.clone()
-        ),
+        SettingsScreen::factory(navigator.clone(), settings_manager.clone()),
     );
     graphics_manager.load_screen(
         "pad_settings",
         PadSettings::factory(
             navigator.clone(),
             pads_midi_paused.clone(),
-            settings_manager.clone()
-        )
+            settings_manager.clone(),
+        ),
     );
 
     graphics_manager.navigate("home");
 
-    graphics_manager.update();
+    graphics_manager.update(false);
 
+    let mut was_shortcut = false;
     let mut press_start_time = 0u32;
     let mut pads_press_start_times = [0u32; 8];
     const LONG_PRESS_THRESHOLD_MS: u32 = 500;
@@ -373,7 +401,7 @@ extern "C" fn rust_main() {
             match message {
                 NavigatorMessage::Navigate(route) => graphics_manager.navigate(&route),
                 NavigatorMessage::Back => graphics_manager.navigate_back(),
-                NavigatorMessage::GraphicsEvent(event) => graphics_manager.send_event(event)
+                NavigatorMessage::GraphicsEvent(event) => graphics_manager.send_event(event),
             }
             needs_refresh = true;
         } else if let Some((res, _)) = selector_queue.recv_front(delay::NON_BLOCK) {
@@ -389,16 +417,24 @@ extern "C" fn rust_main() {
                 SelectorEvent::Click(press) => {
                     if press {
                         press_start_time = timestamp();
-                    } else {
-                        let duration = timestamp() - press_start_time;
-
-                        let event = if duration >= LONG_PRESS_THRESHOLD_MS {
-                            GraphicsEvent::Back
-                        } else {
-                            GraphicsEvent::Click
-                        };
-                        graphics_manager.send_event(event);
                         needs_refresh = true;
+                    } else {
+                        if was_shortcut {
+                            was_shortcut = false;
+                            needs_refresh = true;
+                            press_start_time = 0;
+                        } else {
+                            let duration = timestamp() - press_start_time;
+
+                            let event = if duration >= LONG_PRESS_THRESHOLD_MS {
+                                GraphicsEvent::Back
+                            } else {
+                                GraphicsEvent::Click
+                            };
+                            graphics_manager.send_event(event);
+                            press_start_time = 0;
+                            needs_refresh = true;
+                        }
                     }
                 }
             }
@@ -406,18 +442,41 @@ extern "C" fn rust_main() {
             if event.pressed {
                 pads_press_start_times[event.index as usize] = timestamp();
             } else {
-                let duration = timestamp() - pads_press_start_times[event.index as usize];
-
-                let mut custom_event = 0u32 | ((event.index & 0b111) as u32);
-                if duration >= LONG_PRESS_THRESHOLD_MS {
-                    custom_event |= 1 << 3;
+                let mut custom_event = CustomGraphicsEvent::new().with_channel(event.index);
+                let now = timestamp();
+                let duration = now - pads_press_start_times[event.index as usize];
+                if press_start_time != 0 && (now - press_start_time) >= LONG_PRESS_THRESHOLD_MS {
+                    // Shortcut
+                    custom_event.set_shortcut(true);
+                    was_shortcut = true;
                 }
-                needs_refresh = graphics_manager.send_custom_event(custom_event);
+
+                if duration >= LONG_PRESS_THRESHOLD_MS {
+                    custom_event.set_long_click(true)
+                }
+
+                let data: u32 = custom_event.into();
+                log::info!("custom event: {:b}", data);
+                let shortcut = settings_manager
+                    .get_component::<ShortcutsComponent, _, _>("shortcuts", |component| {
+                        component.from_cevent(custom_event)
+                    })
+                    .expect("Couldn't find shortcuts component");
+                if let Some(shortcut) = shortcut {
+                    match shortcut {
+                        Shortcut::NavigateScreen(screen) => {
+                            graphics_manager.navigate(screen.as_str());
+                            needs_refresh = true;
+                        }
+                    }
+                } else {
+                    needs_refresh = graphics_manager.send_custom_event(data);
+                }
             }
         }
 
         if needs_refresh {
-            graphics_manager.update();
+            graphics_manager.update(press_start_time != 0);
         }
         thread::sleep(Duration::from_millis(100));
     }

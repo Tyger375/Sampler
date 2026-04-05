@@ -60,9 +60,9 @@ impl<'a> GraphicsManager<'a> {
         self.drivers.push(driver);
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, selector_press: bool) {
         let (_, screen) = self.current_screen.as_ref().expect("Screen is null");
-        let rows = screen.render();
+        let rows = screen.render(selector_press);
 
         for driver in self.drivers.iter_mut() {
             driver.clear();

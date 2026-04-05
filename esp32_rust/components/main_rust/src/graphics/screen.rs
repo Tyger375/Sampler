@@ -1,5 +1,5 @@
 use crate::graphics::event::GraphicsEvent;
-use crate::graphics::ui::element::UIElement;
+use crate::graphics::ui::element::{UIElement, UIElementState};
 
 pub struct ScreenData {
     pub elements: Vec<Box<dyn UIElement>>,
@@ -83,7 +83,7 @@ pub trait Screen {
         false
     }
 
-    fn render(&self) -> Vec<String> {
+    fn render(&self, selector_press: bool) -> Vec<String> {
         let data = self.get_data();
         let i = data.row_offset;
         let len = data.elements.iter().len();
@@ -93,7 +93,17 @@ pub trait Screen {
             data.elements[i..end]
                 .iter()
                 .enumerate()
-                .map(|(index, item)| item.render(index == 0))
+                .map(|(index, item)| item.render(
+                    if index == 0 {
+                        if selector_press {
+                            UIElementState::SelectorPress
+                        } else {
+                            UIElementState::Selected
+                        }
+                    } else {
+                        UIElementState::None
+                    }
+                ))
                 .collect()
         } else {
             vec![]

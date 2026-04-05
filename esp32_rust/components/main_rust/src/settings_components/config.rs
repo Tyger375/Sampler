@@ -29,6 +29,11 @@ pub struct ConfigComponent {
 
 impl SettingsComponent for ConfigComponent {
     fn as_any(&self) -> &dyn Any { self }
+
+    fn direct_read(&self, _args: &Vec<&str>) -> String {
+        log::info!("args: {:?}", _args);
+        fs::read_to_string(Self::FILENAME).unwrap_or(String::new())
+    }
 }
 
 impl ConfigComponent {

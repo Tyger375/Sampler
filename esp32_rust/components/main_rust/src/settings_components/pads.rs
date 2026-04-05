@@ -1,5 +1,5 @@
 use std::any::Any;
-use std::array;
+use std::{array, fs};
 use std::sync::mpsc::Sender;
 use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
@@ -51,6 +51,10 @@ pub struct PadsComponent {
 
 impl SettingsComponent for PadsComponent {
     fn as_any(&self) -> &dyn Any { self }
+
+    fn direct_read(&self, _args: &Vec<&str>) -> String {
+        fs::read_to_string(Self::FILENAME).unwrap_or(String::new())
+    }
 }
 
 impl PadsComponent {
