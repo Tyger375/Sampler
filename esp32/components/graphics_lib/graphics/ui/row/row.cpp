@@ -1,7 +1,5 @@
 #include "row.h"
 
-#include <esp_log.h>
-
 void UIRow::add_element(graphics_element_t element)
 {
     elements.push_back(std::move(element));

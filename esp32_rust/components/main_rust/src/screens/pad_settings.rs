@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use crate::graphics::event::GraphicsEvent;
+use crate::graphics::manager::ScreenArgs;
 use crate::graphics::screen::{Screen, ScreenData};
 use crate::graphics::ui::button::UIButton;
 use crate::graphics::ui::intinput::{IntInputConfig, UIIntInput};
@@ -25,8 +26,8 @@ impl PadSettings {
         navigator: Navigator,
         pads_manager_paused: Arc<AtomicBool>,
         settings_manager: Arc<SettingsManager<SettingsEvent>>
-    ) -> impl Fn() -> Box<dyn Screen> + 'static {
-        move || {
+    ) -> impl Fn(ScreenArgs) -> Box<dyn Screen> + 'static {
+        move |_| {
             Box::new(
                 Self::new(
                     navigator.clone(),

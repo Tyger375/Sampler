@@ -7,5 +7,7 @@ pub enum GraphicsEvent {
     ScrollRight,
 
     ScreenStart,
-    ScreenEnd
+    ScreenEnd,
+
+    Refresh
 }

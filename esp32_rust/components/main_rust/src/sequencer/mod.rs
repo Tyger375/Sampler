@@ -71,6 +71,17 @@ impl Sequencer {
         }
     }
 
+    pub fn get_project<T>(&self, lambda: fn(&SequencerProject) -> T) -> T {
+        let guard = self.project.lock().unwrap();
+        lambda(guard.as_ref().expect("Project is None"))
+    }
+
+    pub fn get_project_name(&self) -> String {
+        let guard = self.project.lock().unwrap();
+        let project = guard.as_ref().unwrap();
+        project.name.clone()
+    }
+
     pub fn add_track(&self) {
         let tracks_num = {
             let mut guard = self.project.lock().unwrap();
@@ -87,11 +98,14 @@ impl Sequencer {
         }
     }
 
-    pub fn edit_track(&self, index: usize, lambda: fn(&mut SequencerTrack)) {
+    pub fn edit_track<F, T>(&self, index: usize, lambda: F) -> Option<T>
+    where F: FnOnce(&mut SequencerTrack) -> T {
         let mut guard = self.project.lock().unwrap();
         let proj = guard.as_mut().unwrap();
         if let Some(track) = proj.tracks.get_mut(index) {
-            lambda(track);
+            Some(lambda(track))
+        } else {
+            None
         }
     }
 

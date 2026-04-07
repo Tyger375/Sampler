@@ -32,6 +32,10 @@ use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::{ptr, thread};
+use crate::leds_manager::LedsManager;
+use crate::screens::sequencer::SequencerScreen;
+use crate::screens::sequencer_project::SequencerProjectScreen;
+use crate::screens::sequencer_tracks::SequencerTracksScreen;
 
 pub mod ads1015;
 pub mod graphics;
@@ -47,6 +51,7 @@ pub mod settings_components;
 pub mod task;
 pub mod utils;
 pub mod vendor;
+pub mod leds_manager;
 
 enum SequencerMessage {
     NoteOn(u8),
@@ -203,43 +208,14 @@ extern "C" fn rust_main() {
     let i2c_master = Arc::new(Mutex::new(i2c_master));
 
     // LEDs manager
-    let (led_tx, led_rx) = mpsc::channel::<(u8, bool)>();
-    let led_i2c = i2c_master.clone();
-
-    spawn_task!({
-        name: "leds_manager",
-        stack_size: 2048,
-        priority: 10,
-    }, move || {
-        // LEDs: setting I2C extender PINs to OUTPUT
-        let mut leds = 0u8;
-        {
-            let mut guard = led_i2c.lock().unwrap();
-            guard.write(0x20, &[0x06, 0x00], 1000).unwrap();
-
-            guard.write(0x20, &[0x02, leds], 1000).unwrap();
-        }
-
-        loop {
-            if let Ok((index, press)) = led_rx.recv() {
-                if press {
-                    leds |= 1 << index;
-                } else {
-                    leds &= !(1 << index);
-                }
-
-                let mut guard = led_i2c.lock().unwrap();
-                guard.write(0x20, &[0x02, leds], 1000).unwrap();
-            }
-        }
-    });
+    let leds_manager = Arc::new(LedsManager::new(i2c_master.clone(), 0x20));
 
     // Pads manager
     let (pads_tx, pads_rx) = mpsc::channel();
     let pads_midi_paused = Arc::new(AtomicBool::new(false));
 
     {
-        let leds_tx = led_tx.clone();
+        let leds_manager = leds_manager.clone();
         let queue = pads_manager.pads_midi_events.clone();
         let paused = pads_midi_paused.clone();
         let _handle = spawn_task!({
@@ -265,9 +241,9 @@ extern "C" fn rust_main() {
                             }
 
                             if let MidiType::NoteOn = midi_type {
-                                leds_tx.send((packet.index, true)).ok();
+                                leds_manager.set_led(packet.index, true);
                             } else if let MidiType::NoteOff = midi_type {
-                                leds_tx.send((packet.index, false)).ok();
+                                leds_manager.set_led(packet.index, false);
                             }
                         }
                         PadInputEventType::Debug => {
@@ -374,7 +350,10 @@ extern "C" fn rust_main() {
     graphics_manager.load_screen("home", HomeScreen::factory(navigator.clone()));
     graphics_manager.load_screen(
         "settings",
-        SettingsScreen::factory(navigator.clone(), settings_manager.clone()),
+        SettingsScreen::factory(
+            navigator.clone(),
+            settings_manager.clone()
+        ),
     );
     graphics_manager.load_screen(
         "pad_settings",
@@ -384,8 +363,30 @@ extern "C" fn rust_main() {
             settings_manager.clone(),
         ),
     );
+    graphics_manager.load_screen(
+        "sequencer",
+        SequencerScreen::factory(
+            navigator.clone(),
+            sequencer.clone()
+        ),
+    );
+    graphics_manager.load_screen(
+        "sequencer_project",
+        SequencerProjectScreen::factory(
+            navigator.clone(),
+            sequencer.clone(),
+        ),
+    );
+    graphics_manager.load_screen(
+        "sequencer_tracks",
+        SequencerTracksScreen::factory(
+            navigator.clone(),
+            sequencer.clone(),
+            leds_manager.clone()
+        ),
+    );
 
-    graphics_manager.navigate("home");
+    graphics_manager.navigate("home", vec![]);
 
     graphics_manager.update(false);
 
@@ -399,9 +400,10 @@ extern "C" fn rust_main() {
 
         if let Ok(message) = navigator_rx.try_recv() {
             match message {
-                NavigatorMessage::Navigate(route) => graphics_manager.navigate(&route),
+                NavigatorMessage::Navigate(route) => graphics_manager.navigate(&route, vec![]),
                 NavigatorMessage::Back => graphics_manager.navigate_back(),
                 NavigatorMessage::GraphicsEvent(event) => graphics_manager.send_event(event),
+                NavigatorMessage::CustomEvent(event) => { graphics_manager.send_custom_event(event); },
             }
             needs_refresh = true;
         } else if let Some((res, _)) = selector_queue.recv_front(delay::NON_BLOCK) {
@@ -465,7 +467,7 @@ extern "C" fn rust_main() {
                 if let Some(shortcut) = shortcut {
                     match shortcut {
                         Shortcut::NavigateScreen(screen) => {
-                            graphics_manager.navigate(screen.as_str());
+                            graphics_manager.navigate(screen.as_str(), vec![]);
                             needs_refresh = true;
                         }
                     }

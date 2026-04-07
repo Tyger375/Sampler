@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::sync::mpsc::Sender;
+use crate::graphics::manager::ScreenArgs;
 use crate::graphics::screen::{Screen, ScreenData};
 use crate::graphics::ui::button::UIButton;
 use crate::graphics::ui::intinput::{IntInputConfig, UIIntInput};
@@ -14,8 +15,11 @@ pub struct SettingsScreen {
 }
 
 impl SettingsScreen {
-    pub fn factory(navigator: Navigator, settings: Arc<SettingsManager<SettingsEvent>>) -> impl Fn() -> Box<dyn Screen> {
-        move || Box::new(SettingsScreen::new(navigator.clone(), settings.clone()))
+    pub fn factory(
+        navigator: Navigator,
+        settings: Arc<SettingsManager<SettingsEvent>>
+    ) -> impl Fn(ScreenArgs) -> Box<dyn Screen> {
+        move |_| Box::new(SettingsScreen::new(navigator.clone(), settings.clone()))
     }
 
     pub fn new(

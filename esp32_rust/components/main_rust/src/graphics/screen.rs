@@ -1,5 +1,6 @@
 use crate::graphics::event::GraphicsEvent;
 use crate::graphics::ui::element::{UIElement, UIElementState};
+use crate::graphics::ui::text::UIText;
 
 pub struct ScreenData {
     pub elements: Vec<Box<dyn UIElement>>,
@@ -18,6 +19,10 @@ impl ScreenData {
 
     pub fn add_element<T>(&mut self, item: T) where T: UIElement + 'static {
         self.elements.push(Box::new(item));
+    }
+
+    pub fn add_text(&mut self, text: String) {
+        self.elements.push(Box::new(UIText::new(text)));
     }
 
     pub fn clear(&mut self) {
@@ -82,6 +87,8 @@ pub trait Screen {
     fn on_custom_event(&mut self, _event: u32) -> bool {
         false
     }
+
+    fn refresh(&mut self) {}
 
     fn render(&self, selector_press: bool) -> Vec<String> {
         let data = self.get_data();

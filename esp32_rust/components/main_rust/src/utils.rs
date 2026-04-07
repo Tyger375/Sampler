@@ -47,6 +47,14 @@ pub fn log_main_stack(label: &str) {
     log::info!("Min free stack: {} bytes", stack_bytes);
 }
 
+pub fn pad_to_seq(channel: u8) -> u8 {
+    (channel / 2) + (channel % 2) * 4
+}
+
+pub fn seq_to_pad(seq: u8) -> u8 {
+    (seq % 4) * 2 + (seq / 4)
+}
+
 #[derive(Copy, Clone, Debug, Default)]
 pub struct CustomGraphicsEvent {
     data: u32

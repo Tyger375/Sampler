@@ -3,9 +3,11 @@ use crate::graphics::drivers::GraphicsDriver;
 use crate::graphics::event::GraphicsEvent;
 use crate::graphics::screen::Screen;
 
+pub type ScreenArgs = Option<Vec<String>>;
+
 pub struct GraphicsManager<'a> {
     drivers: Vec<Box<dyn GraphicsDriver>>,
-    screens_factories: HashMap<&'a str, Box<dyn Fn() -> Box<dyn Screen>>>,
+    screens_factories: HashMap<&'a str, Box<dyn Fn(ScreenArgs) -> Box<dyn Screen>>>,
     current_screen: Option<(&'a str, Box<dyn Screen>)>,
     backstack: Vec<&'a str>
 }
@@ -21,7 +23,7 @@ impl<'a> GraphicsManager<'a> {
     }
 
     pub fn load_screen<F>(&mut self, id: &'a str, factory: F)
-    where F: Fn() -> Box<dyn Screen> + 'static {
+    where F: Fn(ScreenArgs) -> Box<dyn Screen> + 'static {
         if id == "back" {
             panic!("Invalid screen ID ({})", id);
         }
@@ -37,19 +39,19 @@ impl<'a> GraphicsManager<'a> {
         self.current_screen = Some((id, screen));
     }
 
-    pub fn navigate(&mut self, id: &str) {
+    pub fn navigate(&mut self, id: &str, args: Vec<String>) {
         let (id, factory) = self.screens_factories.get_key_value(id).expect("Couldn't find screen");
 
         if let Some(current_screen) = self.current_screen.as_mut() {
             self.backstack.push(current_screen.0);
         }
 
-        self.navigate_screen(id, factory());
+        self.navigate_screen(id, factory(None));
     }
     pub fn navigate_back(&mut self) {
         if let Some(id) = self.backstack.pop() {
             let (id, factory) = self.screens_factories.get_key_value(id).expect("Couldn't find screen");
-            self.navigate_screen(id, factory());
+            self.navigate_screen(id, factory(None));
         } else {
             println!("Backstack is empty");
         }
@@ -86,6 +88,9 @@ impl<'a> GraphicsManager<'a> {
                 }
                 GraphicsEvent::ScrollRight => {
                     screen.on_scroll(true);
+                }
+                GraphicsEvent::Refresh => {
+                    screen.refresh();
                 }
                 _ => {
                     println!("Error: unsupported event type for send_event ({:?})", event);
