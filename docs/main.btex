@@ -1,5 +1,60 @@
 @class article\
 
+@title Design and Construction of a Music Sampler\
+@author Edoardo Takanen\
+
 @document {
-   Hello World!
+   @maketitle\
+   
+   @center {
+      @LARGE\
+      **Introduction**
+   }
+
+   A **sampler** is an electronic musical instrument that **records** and plays back **samples** (digital audio assets).
+   It generally comes with a set of **pressure sensitive pads**, each of them can be configured to reproduce a different sample. \\
+   This machine has been frequently used in **hip hop music** for over the past 30 years, with the Akai MPC being the most popular series of Samplers used by producers. \\
+   My goal is to **engineer** a custom solution from the ground up, both designing the hardware and implement a dedicated software.
+
+   @newpage\
+
+   @tableofcontents\
+   @newpage\
+
+   @section (label=sec:pad) The Pad\
+
+   Of course the first challenge was the pressure sensitive pads.
+   I quickly realized that there is no commercial solution that really emulates the Akai pads--my research pivoted toward custom manufacturing.
+   I then discovered **Velostat**, an electrically conductive material, generally used as a packaging material, which occurs to be **piezoresistive**,
+   hence, its **resistance** changes with **pressure**. \\
+   Thus, each pad would consist of a PCB with exposed traces and a square of velostat pressed against the surface,
+   the latter will connect the two traces creating a **resistive path**. A simple **Wheatstone's bridge** will easily help us to calculate the resistance value.
+
+   @figure (H) {
+      @subfigure (width=.4$$textwidth$$, h) {
+         @graphic (width=$$textwidth$$) images/button-front.png\
+      }
+
+      @hfill\
+
+      @subfigure (width=.4$$textwidth$$, h) {
+         @graphic (width=$$textwidth$$) images/button-back.png\
+      }
+   }
+
+   Furthermore, I prioritized a **modular architecture**. By utilizing dedicated connectors, maintenance and upgrades become seamless,
+   allowing for the effortless replacement of individual components without affecting the entire system.
+   Finally, I integrated **LEDs** to provide intuitive and instantaneous **visual feedback**.
+   \\
+
+   @figure (H) {
+      @graphic (width=0.6$$textwidth$$) images/button.png\
+      @centering\
+      @label fig:button\
+   }
+
+   The final assembly includes an uppermost layer of **EVA foam**,
+   which guarantees a sufficient downward pressure to maintain solid interface between the resistive material and the conductive traces.
+
+   @section (label=sec:pads-board) The Pads Board\
 }

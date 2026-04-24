@@ -508,9 +508,9 @@
       "plot": "",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "MPCButton.stl",
       "svg": "",
-      "vrml": ""
+      "vrml": "MPCButton.wrl"
     },
     "page_layout_descr_file": ""
   },
