@@ -1,0 +1,5 @@
+@class article\
+
+@document {
+   Hello World!
+}

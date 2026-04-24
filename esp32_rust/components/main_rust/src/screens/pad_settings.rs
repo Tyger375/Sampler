@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::Sender;
 use crate::graphics::event::GraphicsEvent;
 use crate::graphics::manager::ScreenArgs;
 use crate::graphics::screen::{Screen, ScreenData};
 use crate::graphics::ui::button::UIButton;
+use crate::graphics::ui::checkbox::UICheckBox;
 use crate::graphics::ui::intinput::{IntInputConfig, UIIntInput};
 use crate::graphics::ui::text::UIText;
 use crate::navigator::{Navigator, NavigatorMessage};
@@ -18,6 +18,7 @@ pub struct PadSettings {
     data: ScreenData,
     navigator: Navigator,
     pads_manager_paused: Arc<AtomicBool>,
+    pads_manager_debug: Arc<AtomicBool>,
     settings_manager: Arc<SettingsManager<SettingsEvent>>
 }
 
@@ -25,6 +26,7 @@ impl PadSettings {
     pub fn factory(
         navigator: Navigator,
         pads_manager_paused: Arc<AtomicBool>,
+        pads_manager_debug: Arc<AtomicBool>,
         settings_manager: Arc<SettingsManager<SettingsEvent>>
     ) -> impl Fn(ScreenArgs) -> Box<dyn Screen> + 'static {
         move |_| {
@@ -32,6 +34,7 @@ impl PadSettings {
                 Self::new(
                     navigator.clone(),
                     pads_manager_paused.clone(),
+                    pads_manager_debug.clone(),
                     settings_manager.clone()
                 )
             )
@@ -41,6 +44,7 @@ impl PadSettings {
     pub fn new(
         navigator: Navigator,
         pads_manager_paused: Arc<AtomicBool>,
+        pads_manager_debug: Arc<AtomicBool>,
         settings_manager: Arc<SettingsManager<SettingsEvent>>
     ) -> Self {
         PadSettings {
@@ -48,6 +52,7 @@ impl PadSettings {
             data: ScreenData::new(),
             navigator,
             pads_manager_paused,
+            pads_manager_debug,
             settings_manager
         }
     }
@@ -58,6 +63,18 @@ impl PadSettings {
         self.data.clear();
 
         self.data.add_element(UIText::new("Press button".to_string()));
+
+        let debug = self.pads_manager_debug.clone();
+        self.data.add_element(
+            UICheckBox::new(
+                "Debug".to_string(),
+                move |value| {
+                    debug.clone().store(value, Ordering::Relaxed);
+                    value
+                },
+                self.pads_manager_debug.load(Ordering::Relaxed)
+            )
+        );
     }
 
     fn pad_selected(&mut self) {
@@ -84,7 +101,7 @@ impl PadSettings {
                     format_value: Box::new(|value| {
                         int_to_note(value)
                     }),
-                    on_change: Box::new(|value| {
+                    on_change: Box::new(|value, _| {
                         if value < 0 {
                             0
                         } else if value > MAX_MIDI_NOTE as i32 {
@@ -110,7 +127,7 @@ impl PadSettings {
                     format_value: Box::new(|value| {
                         (value + 1).to_string()
                     }),
-                    on_change: Box::new(|value| {
+                    on_change: Box::new(|value, _| {
                         if value < 0 {
                             0
                         } else if value > MAX_MIDI_CHANNELS as i32 {
@@ -125,6 +142,32 @@ impl PadSettings {
                         });
                     })
                 }, config.channel as i32
+            )
+        );
+
+        let settings_manager = self.settings_manager.clone();
+        self.data.add_element(
+            UIIntInput::new(
+                IntInputConfig {
+                    text: "Threshold".to_string(),
+                    format_value: Box::new(|value| {
+                        value.to_string()
+                    }),
+                    on_change: Box::new(|value, _| {
+                        if value < 50 {
+                            50
+                        } else if value > 1000 {
+                            1000
+                        } else {
+                            value
+                        }
+                    }),
+                    on_done: Box::new(move |value| {
+                        settings_manager.clone().get_component("pads", |component: &PadsComponent| {
+                            component.set_pad_threshold(page_focus as u8, value as u16);
+                        });
+                    })
+                }, config.threshold as i32
             )
         );
 

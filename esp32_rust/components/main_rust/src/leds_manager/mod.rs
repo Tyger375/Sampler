@@ -1,5 +1,4 @@
 use std::sync::{mpsc, Arc, Mutex};
-use std::sync::atomic::{AtomicBool, AtomicU8};
 use std::sync::mpsc::Sender;
 use esp_idf_svc::hal::i2c::I2cDriver;
 use crate::spawn_task;

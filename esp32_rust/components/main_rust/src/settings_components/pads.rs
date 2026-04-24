@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use crate::pads::PadPressType;
 use crate::settings::component::SettingsComponent;
-use crate::settings::{load_config, save_config};
+use crate::settings::{load_config_or_default, save_config};
 use crate::settings_components::SettingsEvent;
 use crate::utils::{MAX_MIDI_CHANNELS, MAX_MIDI_NOTE};
 
@@ -80,7 +80,7 @@ impl PadsComponent {
     }
 
     pub fn on_load(&self) {
-        let config = load_config::<PadsData>(Self::FILENAME);
+        let config = load_config_or_default::<PadsData>(Self::FILENAME);
 
         {
             let mut guard = self.data.lock().unwrap();
@@ -137,5 +137,10 @@ impl PadsComponent {
 
         let mut guard = self.pads.lock().unwrap();
         guard[index as usize].channel = channel;
+    }
+
+    pub fn set_pad_threshold(&self, index: u8, threshold: u16) {
+        let mut guard = self.pads.lock().unwrap();
+        guard[index as usize].threshold = threshold;
     }
 }

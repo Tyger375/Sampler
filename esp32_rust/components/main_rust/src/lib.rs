@@ -9,7 +9,7 @@ use crate::screens::home::HomeScreen;
 use crate::screens::pad_settings::PadSettings;
 use crate::screens::settings::SettingsScreen;
 use crate::selector::{RotationEvent, Selector, SelectorEvent};
-use crate::sequencer::{Sequencer, SequencerResolution};
+use crate::sequencer::Sequencer;
 use crate::settings::manager::SettingsManager;
 use crate::settings_components::config::ConfigComponent;
 use crate::settings_components::pads::PadsComponent;
@@ -36,6 +36,8 @@ use crate::leds_manager::LedsManager;
 use crate::screens::sequencer::SequencerScreen;
 use crate::screens::sequencer_project::SequencerProjectScreen;
 use crate::screens::sequencer_tracks::SequencerTracksScreen;
+use crate::settings_components::sequencer::SequencerSettings;
+use crate::settings_components::sequencer_projects::SequencerProjects;
 
 pub mod ads1015;
 pub mod graphics;
@@ -102,6 +104,8 @@ extern "C" fn rust_main() {
     settings_manager.add_component("config", |tx| ConfigComponent::new(tx));
     settings_manager.add_component("pads", |tx| PadsComponent::new(tx));
     settings_manager.add_component("shortcuts", |tx| ShortcutsComponent::new(tx));
+    settings_manager.add_component("sequencer", |tx| SequencerSettings::new(tx));
+    settings_manager.add_component("sequencer_projects", |tx| SequencerProjects::new(tx));
 
     log_main_stack("After adding components");
 
@@ -133,6 +137,10 @@ extern "C" fn rust_main() {
             }
         });
     }
+
+    settings_manager.get_component::<PadsComponent, _, _>("pads", |component| {
+        pads_manager.request_update_settings(&component.get_configs());
+    });
 
     // Vendor
     {
@@ -248,8 +256,8 @@ extern "C" fn rust_main() {
                         }
                         PadInputEventType::Debug => {
                             let value = (packet.note as u16) | ((packet.velocity as u16) << 8);
-                            Vendor::write_raw(&format!("{}: {}", packet.index, value));
-                            Vendor::flush();
+                            Vendor::write_raw(&format!("{}: ({}, {});", packet.index, value, packet.channel));
+                            //Vendor::flush();
                         }
                     }
                 };
@@ -283,12 +291,14 @@ extern "C" fn rust_main() {
         }, move || {
             loop {
                 if let Ok(item) = sequencer_channel.recv() {
-                    match item {
-                        SequencerMessage::NoteOn(step) => {
-                            sequencer.step_trigger_on(step);
-                        }
-                        SequencerMessage::NoteOff(step) => {
-                            sequencer.step_trigger_off(step);
+                    if sequencer.enabled() {
+                        match item {
+                            SequencerMessage::NoteOn(step) => {
+                                sequencer.step_trigger_on(step);
+                            }
+                            SequencerMessage::NoteOff(step) => {
+                                sequencer.step_trigger_off(step);
+                            }
                         }
                     }
                 }
@@ -316,6 +326,7 @@ extern "C" fn rust_main() {
 
             loop {
                 if let Ok(item) = quantizer_rx.try_recv() {
+                    log::info!("Starting quantizer with bpm: {item}");
                     quantizer.start(item).unwrap();
                 }
 
@@ -360,6 +371,7 @@ extern "C" fn rust_main() {
         PadSettings::factory(
             navigator.clone(),
             pads_midi_paused.clone(),
+            pads_manager.is_debug(),
             settings_manager.clone(),
         ),
     );
@@ -367,7 +379,8 @@ extern "C" fn rust_main() {
         "sequencer",
         SequencerScreen::factory(
             navigator.clone(),
-            sequencer.clone()
+            sequencer.clone(),
+            settings_manager.clone()
         ),
     );
     graphics_manager.load_screen(
@@ -375,6 +388,7 @@ extern "C" fn rust_main() {
         SequencerProjectScreen::factory(
             navigator.clone(),
             sequencer.clone(),
+            settings_manager.clone(),
         ),
     );
     graphics_manager.load_screen(
@@ -418,7 +432,11 @@ extern "C" fn rust_main() {
                 }
                 SelectorEvent::Click(press) => {
                     if press {
-                        press_start_time = timestamp();
+                        if press_start_time == 0 {
+                            press_start_time = timestamp();
+                        } else {
+                            press_start_time = 0; // Cancel press
+                        }
                         needs_refresh = true;
                     } else {
                         if was_shortcut {
@@ -441,6 +459,9 @@ extern "C" fn rust_main() {
                 }
             }
         } else if let Ok(event) = pads_rx.try_recv() {
+            if pads_manager.is_debug.load(Ordering::Relaxed) {
+                continue;
+            }
             if event.pressed {
                 pads_press_start_times[event.index as usize] = timestamp();
             } else {
@@ -451,14 +472,12 @@ extern "C" fn rust_main() {
                     // Shortcut
                     custom_event.set_shortcut(true);
                     was_shortcut = true;
-                }
-
-                if duration >= LONG_PRESS_THRESHOLD_MS {
+                } else if duration >= LONG_PRESS_THRESHOLD_MS {
                     custom_event.set_long_click(true)
                 }
 
                 let data: u32 = custom_event.into();
-                log::info!("custom event: {:b}", data);
+                //log::info!("custom event: {:b}", data);
                 let shortcut = settings_manager
                     .get_component::<ShortcutsComponent, _, _>("shortcuts", |component| {
                         component.from_cevent(custom_event)

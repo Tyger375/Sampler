@@ -88,7 +88,7 @@ pub trait Screen {
         false
     }
 
-    fn refresh(&mut self) {}
+    fn refresh(&mut self, _message: String) {}
 
     fn render(&self, selector_press: bool) -> Vec<String> {
         let data = self.get_data();

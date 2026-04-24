@@ -9,5 +9,11 @@ pub enum GraphicsEvent {
     ScreenStart,
     ScreenEnd,
 
-    Refresh
+    Refresh(String)
+}
+
+impl GraphicsEvent {
+    pub fn refresh(message: &str) -> Self {
+        GraphicsEvent::Refresh(message.to_string())
+    }
 }

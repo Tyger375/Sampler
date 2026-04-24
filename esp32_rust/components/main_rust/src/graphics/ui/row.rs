@@ -1,8 +1,9 @@
-use std::cmp::{max, min};
+use std::cmp::min;
 use crate::graphics::event::GraphicsEvent;
 use crate::graphics::ui::element::{UIElement, UIElementState};
 
 pub struct UIRow {
+    label: String,
     elements: Vec<Box<dyn UIElement>>,
     offset: usize,
     focus: bool,
@@ -11,6 +12,15 @@ pub struct UIRow {
 impl UIRow {
     pub fn new() -> Self {
         Self {
+            label: String::new(),
+            elements: vec![],
+            offset: 0,
+            focus: false
+        }
+    }
+    pub fn with_label(label: &str) -> Self {
+        Self {
+            label: format!("{}: ", label),
             elements: vec![],
             offset: 0,
             focus: false
@@ -31,7 +41,7 @@ impl UIElement for UIRow {
             UIElementState::None => ""
         };
 
-        let mut text = String::from(prefix);
+        let mut text = format!("{}{}", prefix, self.label);
 
         if let Some(element) = self.elements.get(self.offset) {
             let child_state = match state {
@@ -57,7 +67,7 @@ impl UIElement for UIRow {
                 if !self.focus {
                     self.focus = true
                 } else {
-                    self.elements[self.offset].on_event(event);
+                    return self.elements[self.offset].on_event(event);
                 }
                 true
             }
@@ -74,7 +84,9 @@ impl UIElement for UIRow {
                 false
             }
             GraphicsEvent::ScrollLeft => {
-                self.offset = max(self.offset - 1, 0);
+                if self.offset > 0 {
+                    self.offset -= 1;
+                }
                 false
             }
             _ => false

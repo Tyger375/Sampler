@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::sync::mpsc::Sender;
 use crate::graphics::manager::ScreenArgs;
 use crate::graphics::screen::{Screen, ScreenData};
 use crate::graphics::ui::button::UIButton;
@@ -41,7 +40,7 @@ impl SettingsScreen {
                 format_value: Box::new(|value| {
                     value.to_string()
                 }),
-                on_change: Box::new(|value| {
+                on_change: Box::new(|value, _| {
                     if value > 200 {
                         200
                     } else if value < 60 {
@@ -54,6 +53,7 @@ impl SettingsScreen {
                     log::info!("New value: {}", value);
                     s.get_component("config", |component: &ConfigComponent| {
                         component.set_bpm(value as u8);
+                        component.commit();
                     });
                 })
             }, bpm as i32

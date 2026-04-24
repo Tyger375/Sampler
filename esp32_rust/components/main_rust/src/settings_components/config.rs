@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::mpsc::Sender;
 use serde::{Deserialize, Serialize};
 use crate::settings::component::SettingsComponent;
-use crate::settings::{load_config, save_config};
+use crate::settings::{load_config_or_default, save_config};
 use crate::settings_components::SettingsEvent;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -62,7 +62,7 @@ impl ConfigComponent {
     }
 
     pub fn on_load(&self) {
-        let config = load_config::<ConfigData>(Self::FILENAME);
+        let config = load_config_or_default::<ConfigData>(Self::FILENAME);
 
         {
             let mut guard = self.data.lock().unwrap();

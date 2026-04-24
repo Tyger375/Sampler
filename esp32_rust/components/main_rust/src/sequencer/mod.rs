@@ -1,9 +1,10 @@
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use serde::{Deserialize, Serialize};
 use crate::midi::MIDI;
 
 #[repr(u8)]
-#[derive(Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone)]
 pub enum SequencerResolution {
     Quarter     = 1,
     HalfBeat    = 2,
@@ -11,7 +12,28 @@ pub enum SequencerResolution {
     Loop        = 16,
 }
 
-#[derive(Clone)]
+impl SequencerResolution {
+    pub fn as_index(&self) -> i32 {
+        match self {
+            SequencerResolution::Quarter => 0,
+            SequencerResolution::HalfBeat => 1,
+            SequencerResolution::Beat => 2,
+            SequencerResolution::Loop => 3
+        }
+    }
+
+    pub fn from_index(index: i32) -> Self {
+        match index {
+            0 => SequencerResolution::Quarter,
+            1 => SequencerResolution::HalfBeat,
+            2 => SequencerResolution::Beat,
+            3 => SequencerResolution::Loop,
+            _ => panic!("Couldn't convert {} into SequencerResolution", index)
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SequencerTrack {
     pub loops: u8,
     pub resolution: SequencerResolution,
@@ -23,14 +45,14 @@ impl Default for SequencerTrack {
     fn default() -> Self {
         Self {
             loops: 1,
-            resolution: SequencerResolution::Quarter,
+            resolution: SequencerResolution::HalfBeat,
             note: 60,
             triggers: vec![]
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct SequencerProject {
     pub name: String,
     pub loops: u8,
@@ -40,7 +62,7 @@ pub struct SequencerProject {
 pub struct Sequencer {
     project: Arc<Mutex<Option<SequencerProject>>>,
     trigger_states: Arc<Mutex<Vec<bool>>>,
-    enable: bool,
+    enable: AtomicBool,
     current_loop: AtomicU8,
 }
 
@@ -49,15 +71,23 @@ impl Sequencer {
         Self {
             project: Arc::new(Mutex::new(None)),
             trigger_states: Arc::new(Mutex::new(vec![])),
-            enable: false,
+            enable: AtomicBool::new(false),
             current_loop: AtomicU8::new(0)
         }
     }
 
-    pub fn new_project(&self, name: String, loops: u8) {
+    pub fn enabled(&self) -> bool {
+        self.enable.load(Ordering::Relaxed)
+    }
+
+    pub fn set_enable(&self, value: bool) {
+        self.enable.store(value, Ordering::Relaxed);
+    }
+
+    pub fn new_project(&self, name: String) {
         let project = SequencerProject {
             name,
-            loops,
+            loops: 1,
             tracks: vec![]
         };
         {
@@ -71,7 +101,20 @@ impl Sequencer {
         }
     }
 
-    pub fn get_project<T>(&self, lambda: fn(&SequencerProject) -> T) -> T {
+    pub fn load_project(&self, project: SequencerProject) {
+        let tracks_num = project.tracks.len();
+        {
+            let mut guard = self.project.lock().unwrap();
+            *guard = Some(project);
+        }
+        {
+            let mut guard = self.trigger_states.lock().unwrap();
+            guard.resize(tracks_num, false);
+        }
+    }
+
+    pub fn get_project<F, T>(&self, lambda: F) -> T
+    where F: FnOnce(&SequencerProject) -> T {
         let guard = self.project.lock().unwrap();
         lambda(guard.as_ref().expect("Project is None"))
     }
@@ -80,6 +123,25 @@ impl Sequencer {
         let guard = self.project.lock().unwrap();
         let project = guard.as_ref().unwrap();
         project.name.clone()
+    }
+
+    pub fn get_project_name_or_null(&self) -> Option<String> {
+        let guard = self.project.lock().unwrap();
+        if let Some(project) = guard.as_ref() {
+            return Some(project.name.clone());
+        }
+        None
+    }
+
+    pub fn set_project_loops(&self, loops: u8) {
+        let mut guard = self.project.lock().unwrap();
+        let project = guard.as_mut().unwrap();
+        project.loops = loops;
+
+        // Adjusting track loops
+        for track in project.tracks.iter_mut() {
+            track.loops = 1;
+        }
     }
 
     pub fn add_track(&self) {
@@ -95,6 +157,21 @@ impl Sequencer {
         {
             let mut guard = self.trigger_states.lock().unwrap();
             guard.resize(tracks_num, false);
+        }
+    }
+
+    pub fn remove_track(&self, index: usize) {
+        {
+            let mut guard = self.project.lock().unwrap();
+            if guard.is_none() {
+                return;
+            }
+            let guard = guard.as_mut().unwrap();
+            guard.tracks.remove(index);
+        }
+        {
+            let mut guard = self.trigger_states.lock().unwrap();
+            guard.remove(index);
         }
     }
 
@@ -125,10 +202,6 @@ impl Sequencer {
             let track_step = step + (16 * (current_loop % track.loops));
             Self::handle_track_on(track, track_step, state);
         }
-
-        if step == 15 {
-            self.current_loop.store((current_loop + 1) % project.loops, Ordering::Relaxed);
-        }
     }
     pub fn step_trigger_off(&self, step: u8) {
         let project = {
@@ -145,6 +218,10 @@ impl Sequencer {
         for (track, state) in project.tracks.iter().zip(guard.iter_mut()) {
             let track_step = step + (16 * (current_loop % track.loops));
             Self::handle_track_off(track, track_step, state);
+        }
+
+        if step == 15 {
+            self.current_loop.store((current_loop + 1) % project.loops, Ordering::Relaxed);
         }
     }
 

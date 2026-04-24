@@ -15,7 +15,7 @@ impl MIDI {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum MidiType {
     NoteOn,
     NoteOff,

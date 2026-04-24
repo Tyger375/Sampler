@@ -39,7 +39,7 @@ impl<'a> GraphicsManager<'a> {
         self.current_screen = Some((id, screen));
     }
 
-    pub fn navigate(&mut self, id: &str, args: Vec<String>) {
+    pub fn navigate(&mut self, id: &str, _args: Vec<String>) {
         let (id, factory) = self.screens_factories.get_key_value(id).expect("Couldn't find screen");
 
         if let Some(current_screen) = self.current_screen.as_mut() {
@@ -89,8 +89,8 @@ impl<'a> GraphicsManager<'a> {
                 GraphicsEvent::ScrollRight => {
                     screen.on_scroll(true);
                 }
-                GraphicsEvent::Refresh => {
-                    screen.refresh();
+                GraphicsEvent::Refresh(message) => {
+                    screen.refresh(message);
                 }
                 _ => {
                     println!("Error: unsupported event type for send_event ({:?})", event);

@@ -7,6 +7,16 @@ pub mod manager;
 pub mod component;
 
 pub fn load_config<T>(path: &str) -> T
+where T: Serialize + DeserializeOwned {
+    if let Ok(content) = fs::read_to_string(path) {
+        if let Ok(config) = toml::from_str::<T>(&content) {
+            return config
+        }
+    }
+    panic!("Config not found!");
+}
+
+pub fn load_config_or_default<T>(path: &str) -> T
 where T: Serialize + DeserializeOwned + Default {
     if let Ok(content) = fs::read_to_string(path) {
         if let Ok(config) = toml::from_str::<T>(&content) {
@@ -17,6 +27,16 @@ where T: Serialize + DeserializeOwned + Default {
     let default_conf = T::default();
     save_config(path, &default_conf);
     default_conf
+}
+
+pub fn load_config_or_null<T>(path: &str) -> Option<T>
+where T: Serialize + DeserializeOwned {
+    if let Ok(content) = fs::read_to_string(path) {
+        if let Ok(config) = toml::from_str::<T>(&content) {
+            return Some(config);
+        }
+    }
+    None
 }
 
 pub fn save_config<T>(path: &str, config: &T)

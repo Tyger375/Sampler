@@ -85,6 +85,14 @@ impl DrumPad {
 
 fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<PadInputEvent> {
     let now = timestamp();
+    const SCAN_TIME_MS: u32 = 5;
+    const RETRIGGER_MASK_MS: u32 = 30; // Helps to debounce by removing noise
+
+    /*
+    if value > 1750 {
+        return None;
+    }
+    */
 
     match settings.state {
         PadState::Idle => {
@@ -102,20 +110,16 @@ fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<
             }
 
             // Wait 5ms
-            if now - settings.timer_start >= 5 {
-                let velocity = if settings.peak > 2047 {
-                    127
-                } else {
-                    settings.peak >> 4
-                };
-
+            if now - settings.timer_start >= SCAN_TIME_MS {
                 settings.state = PadState::Sustain;
+
+                let velocity = (settings.peak >> 5).min(127) as u8;
 
                 Some(PadInputEvent {
                     index,
                     channel: settings.channel,
                     note: settings.note,
-                    velocity: velocity as u8,
+                    velocity: velocity,
                     event_type: PadInputEventType::MIDI(MidiType::NoteOn),
                 })
             } else {
@@ -124,24 +128,28 @@ fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<
         }
         PadState::Sustain => {
             // Look for the value to drop below threshold
-            if value < (settings.threshold as f32 * 0.8) as u16 {
-                // 20% Hysteresis
+            const HYSTERESIS: f32 = 0.7;
+            if value < (settings.threshold as f32 * HYSTERESIS) as u16 {
                 settings.state = PadState::Release;
                 settings.timer_start = now;
+
+                Some(PadInputEvent {
+                    index,
+                    channel: settings.channel,
+                    note: settings.note,
+                    velocity: 0,
+                    event_type: PadInputEventType::MIDI(MidiType::NoteOff),
+                })
+            } else {
+                None
+            }
+        }
+        PadState::Release => {
+            if now - settings.timer_start >= RETRIGGER_MASK_MS {
+                settings.state = PadState::Idle;
             }
 
             None
-        }
-        PadState::Release => {
-            settings.state = PadState::Idle;
-
-            Some(PadInputEvent {
-                index,
-                channel: settings.channel,
-                note: settings.note,
-                velocity: 0,
-                event_type: PadInputEventType::MIDI(MidiType::NoteOff),
-            })
         }
     }
 }
@@ -149,7 +157,8 @@ fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<
 pub struct PadsManager {
     settings: Arc<Mutex<[DrumPad; 8]>>,
     task_status: Arc<TaskState>,
-    pub pads_midi_events: Arc<Queue<PadInputEvent>>
+    pub pads_midi_events: Arc<Queue<PadInputEvent>>,
+    pub is_debug: Arc<AtomicBool>
 }
 
 impl PadsManager {
@@ -188,10 +197,12 @@ impl PadsManager {
         let queue = Arc::new(Queue::new(64));
         let task_status = Arc::new(TaskState::new(TaskStatus::Running));
 
+        let is_debug = Arc::new(AtomicBool::new(false));
         {
             let queue = queue.clone();
             let task_status = task_status.clone();
             let settings = settings.clone();
+            let is_debug = is_debug.clone();
 
             let _handle = spawn_task!({
                 name: "pads_input_task",
@@ -209,32 +220,57 @@ impl PadsManager {
                 loop {
                     match task_status.get() {
                         TaskStatus::Running => {
-                            delay_us(500);
+                            delay_us(750);
 
                             let value1 = ads1.read();
                             let value2 = ads2.read();
 
-                            /*
-                            queue.send_back(PadInputEvent {
-                                index: channel as u8,
-                                channel: 0,
-                                note: (value1 & 0xFF) as u8,
-                                velocity: ((value1 >> 8) & 0xFF) as u8,
-                                event_type: PadInputEventType::Debug
-                            }, 0).unwrap();
-                            queue.send_back(PadInputEvent {
-                                index: (channel + 4) as u8,
-                                channel: 0,
-                                note: (value2 & 0xFF) as u8,
-                                velocity: ((value2 >> 8) & 0xFF) as u8,
-                                event_type: PadInputEventType::Debug
-                            }, 0).unwrap();
-                            */
-                            if let Some(item) = process_pad_physics(channel as u8, &mut pads_settings[channel], value1) {
+                            let press_type1 = if let Some(item) = process_pad_physics(channel as u8, &mut pads_settings[channel], value1) {
                                 queue.send_back(item, 0).unwrap();
-                            }
-                            if let Some(item) = process_pad_physics((channel as u8) + 4, &mut pads_settings[channel + 4], value2) {
+                                if let PadInputEventType::MIDI(midi_type) = item.event_type {
+                                    if midi_type == MidiType::NoteOn {
+                                        2u8
+                                    } else {
+                                        1u8
+                                    }
+                                } else {
+                                    3
+                                }
+                            } else {
+                                0
+                            };
+
+                            let press_type2 = if let Some(item) = process_pad_physics((channel as u8) + 4, &mut pads_settings[channel + 4], value2) {
                                 queue.send_back(item, 0).unwrap();
+                                if let PadInputEventType::MIDI(midi_type) = item.event_type {
+                                    if midi_type == MidiType::NoteOn {
+                                        2u8
+                                    } else {
+                                        1u8
+                                    }
+                                } else {
+                                    3
+                                }
+                            } else {
+                                0
+                            };
+
+                            if is_debug.load(Ordering::Relaxed) {
+                                queue.send_back(PadInputEvent {
+                                    index: channel as u8,
+                                    channel: press_type1,
+                                    note: (value1 & 0xFF) as u8,
+                                    velocity: ((value1 >> 8) & 0xFF) as u8,
+                                    event_type: PadInputEventType::Debug
+                                }, 0).ok();
+
+                                queue.send_back(PadInputEvent {
+                                    index: (channel + 4) as u8,
+                                    channel: press_type2,
+                                    note: (value2 & 0xFF) as u8,
+                                    velocity: ((value2 >> 8) & 0xFF) as u8,
+                                    event_type: PadInputEventType::Debug
+                                }, 0).ok();
                             }
 
                             channel = (channel + 1) % 4;
@@ -260,7 +296,8 @@ impl PadsManager {
         Ok(PadsManager {
             settings,
             task_status,
-            pads_midi_events: queue
+            pads_midi_events: queue,
+            is_debug
         })
     }
 
@@ -274,5 +311,9 @@ impl PadsManager {
             item.threshold = config.threshold;
         }
         self.task_status.set(TaskStatus::Updating);
+    }
+
+    pub fn is_debug(&self) -> Arc<AtomicBool> {
+        self.is_debug.clone()
     }
 }

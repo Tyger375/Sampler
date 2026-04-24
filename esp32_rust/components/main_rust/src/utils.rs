@@ -8,13 +8,13 @@ const NOTE_NAMES: [&str; 12] = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#",
 
 pub fn int_to_note(note: i32) -> String {
     if note < 0 || note > MAX_MIDI_NOTE as i32 {
-        return String::new()
+        return String::from("---")
     }
 
     let octave = (note / 12) - 1;
-    let name_index = note % 12;
+    let name_index = (note % 12) as usize;
 
-    format!("{}{}", NOTE_NAMES[name_index as usize], octave)
+    format!("{}{}", NOTE_NAMES[name_index], octave)
 }
 
 extern "C" {

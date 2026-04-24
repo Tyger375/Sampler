@@ -44,7 +44,7 @@ static const char* str_desc[] = {
 
 static constexpr uint8_t s_composite_cfg_desc[] = {
     // Configuration number, interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_COUNT, 0, TUSB_DESCRIPTOR_TOTAL_LEN, 0, 100),
+    TUD_CONFIG_DESCRIPTOR(1, ITF_COUNT, 0, TUSB_DESCRIPTOR_TOTAL_LEN, 0, 500),
 
     // MIDI (Intf 0, 1)
     // Interface number, string index, EP Out & EP In address, EP size
