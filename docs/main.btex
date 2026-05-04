@@ -57,4 +57,9 @@
    which guarantees a sufficient downward pressure to maintain solid interface between the resistive material and the conductive traces.
 
    @section (label=sec:pads-board) The Pads Board\
+
+   After getting the pads manufactured and shipped, I needed a dedicated interface **board** that would handle **eight buttons** in place.
+   Since MCUs hardly support eight analog pins, letting a microcontroller handle individual analog value reads and LEDs is not the optimal solutions. Hence, the board integrates external ADCs communicating via the **I2C protocol**.
+   \\
+   Adopting the same modular philosophy as the pads, the architecture simplifies the interface to just six connections: a single I2C line for the ADCs, separated (in order to split the load and decrease timing issues) from another I2C line for the GPIO extender, which will control LEDs, alongside two power pins.
 }
