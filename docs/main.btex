@@ -14,7 +14,11 @@
    A **sampler** is an electronic musical instrument that **records** and plays back **samples** (digital audio assets).
    It generally comes with a set of **pressure sensitive pads**, each of them can be configured to reproduce a different sample. \\
    This machine has been frequently used in **hip hop music** for over the past 30 years, with the Akai MPC being the most popular series of Samplers used by producers. \\
-   My goal is to **engineer** a custom solution from the ground up, both designing the hardware and implement a dedicated software.
+   My goal is to **engineer** a custom solution from the ground up.
+   This project was for fun as a hobby but also educational, as it required both designing the hardware and implement a dedicated software--I have learned so many new things and I definitely do **not** consider this project finished, but I will keep on upgrading and perfecting it.
+   \\
+   Custom building something always comes with advantages and disadvantages. On one hand, it grants absolute control over the device, being able to implement whatever I want whenever I need some new features has a lot of different outcomes--it makes the device more flexible to future requirements.
+   While on the other hand, there are a lot of challenges to address and options to consider, not to mention that what I am trying to imitate is something so complex that it usually takes a whole team to build--sometimes reinventing the wheel is just stressful!
 
    @newpage\
 
@@ -62,4 +66,42 @@
    Since MCUs hardly support eight analog pins, letting a microcontroller handle individual analog value reads and LEDs is not the optimal solutions. Hence, the board integrates external ADCs communicating via the **I2C protocol**.
    \\
    Adopting the same modular philosophy as the pads, the architecture simplifies the interface to just six connections: a single I2C line for the ADCs, separated (in order to split the load and decrease timing issues) from another I2C line for the GPIO extender, which will control LEDs, alongside two power pins.
+
+   @figure (H) {
+      @graphic (width=.5$$textwidth$$) images/board-powering.png\
+      @centering\
+      @caption board powering\
+      @label fig:board-powering\
+   }
+
+   \\
+   The **ADS1015** is a delta-sigma analog-to-digital converter that perfectly aligns with my project requirements. With **12-bit resolution**, four single-ended inputs and a sampling rate of up to **3300 SPS**, this component embodies all the qualities I was looking for--high convertion speed (one convertion takes approximately 0.3ms), a decent resolution (unsigned integers up to 4095) and its ability to handle four inputs via a single I2C address makes it a cost-effective and space-efficient solution for multi-channel sensing.
+   \\
+   A Wheatstone's bridge-based approach outputs differential signals, which the ADS1015 does support; however, this reduces the capacity to only two inputs per converter. Scaling this to eight buttons would force us to use **four separate ADCs**, heavily increasing delays and causing a communication bottleneck, due to the fact that they all would need to share a single I2C line.
+   To resolve this issue, the differential signal must be processed externally before reaching the ADC.
+   While dedicated **instrumentation amplifiers** are ideal for this task, as they contain low-tolerance internal resistors, which obviously means a higher unit cost.
+   Consequently, I figured out that emulating the instrumentation amplifier myself using three common **operational amplifiers** was a cheaper solution, sacrificing an ultra-high sensing precision, which was not significant for this project.
+   \\
+   More convenient was in fact the **TS914**, which packages **four rail-to-rail op-amps**, which let us keep tidiness on the board, furthermore isolating each pad, decreasing PCB complexity and maintaining a **clean layout**.
+
+   @figure (H) {
+      @graphic (width=1$$textwidth$$) images/board-schematic.png\
+      @centering\
+      @caption signal processing structure\
+      @label fig:board-schematic\
+   }
+
+   Figure @ref fig:board-schematic\ $$fs$$ represents the **complete signal processing chain** for a single pad; this architecture was subsequently replicated across all eight inputs.
+
+   @figure (H) {
+      @graphic (width=.75$$textwidth$$) images/board-pcb.png\
+      @centering\
+      @caption board PCB\
+      @label fig:board-pcb\
+   }
+
+   As mentioned before, when designing the PCB, I focused on simplicity and maintaining a clean layout.
+   Each pad is allocated a dedicated zone on the board, all the components are contained within that footprint, giving a clear visual representation of independency and isolation I was referring to.
+   \\
+   Further information can be found inside the **GitHub repository**. All KiCad schematics and PCB layout fiels have been released as **open-source material**.
 }
