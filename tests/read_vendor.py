@@ -144,7 +144,7 @@ def update(frame):
         midi_type = item[1]
 
         append_data_store(idx, val, False)
-        append_data_store(idx + 16, midi_type * 500, True)
+        #append_data_store(idx + 16, midi_type * 500, True)
 
     return line_objects.values()
     """

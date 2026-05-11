@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #include "esp_log.h"
 #include "FreeRTOS.h"

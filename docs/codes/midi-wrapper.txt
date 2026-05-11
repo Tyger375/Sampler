@@ -1,0 +1,20 @@
+// midi.rs
+
+extern "C" {
+    // C++ defined functions
+    fn midi_mounted() -> bool;
+    fn midi_out(packet: *const [u8; 4]);
+}
+
+pub struct MIDI;
+
+// Wrapping unsafe methods
+impl MIDI {
+    pub fn send(packet: &[u8; 4]) {
+        unsafe {
+            if midi_mounted() {
+                midi_out(packet);
+            }
+        }
+    }
+}

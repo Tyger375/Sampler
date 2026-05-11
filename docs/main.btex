@@ -1,5 +1,9 @@
 @class article\
 
+@latex {
+   \usepackage{listings-rust}
+}
+
 @title Design and Construction of a Music Sampler\
 @author Edoardo Takanen\
 
@@ -20,8 +24,7 @@
    Custom building something always comes with advantages and disadvantages. On one hand, it grants absolute control over the device, being able to implement whatever I want whenever I need some new features has a lot of different outcomes--it makes the device more flexible to future requirements.
    While on the other hand, there are a lot of challenges to address and options to consider, not to mention that what I am trying to imitate is something so complex that it usually takes a whole team to build--sometimes reinventing the wheel is just stressful!
    \\
-   (NEW)
-   Moreover, as my last year of high school, I was required to present a project that would represent my journey of self-development throughtout the year--I could not think of a better project than this, as it is more significantly related, rather than the other projects I made the other years, to what my next five years of university, in which I plan to attend the faculty of Electronics.
+   Moreover, as my last year of high school, I am required to present a project that reflects my personal and technical growth throughtout this year. I believe this project fits the best for this task; compared to my previous projects, it aligns most closely with my future academic path. As I prepare to enter a five-year degree in Electronic Engineering, this design serves as a practical foundation for the challenges ahead.
 
    @newpage\
 
@@ -111,24 +114,26 @@
    @section (label=sec:development-tools) Development Tools\
 
    As already mentioned above, this board cannot work independently, it does not contain any processing unit that could elaborate the converted signals. Therefore this project will require another PCB to manage overall functionality of the sampler.
-   At the time of this first draft of the paper, I still have yet to design such board, in which I plan to implement devices to allow **standalone functionalities** that require no additional hardware (computers or MIDI synthesizers) to work, like professional samplers.
-   Until the development of this final board, the only way to experiment with everything that was printed so far was to set up a breadboard environment, using an **Arduino Nano ESP32** I had at home.
+   At the time of this first draft of the paper, I still have yet to design such board, in which I plan to implement devices to allow **standalone functionalities**, so that no additional hardware (computers or MIDI synthesizers) is required for the instrument to work, like professional samplers.
    \\
-   Having already some experience with *esp32 devices* and their development environment, I chose the **esp32s3** (the chip installed in the Arduino Nano ESP32) as a final choice for the board.
+   Until the development of this final board, the only way to experiment with everything that was printed so far was to set up a breadboard environment, using an **Arduino Nano ESP32** I had at home.
+   Having already some experience with *esp32 devices* and their development kit, I chose the **esp32s3** (the chip installed in the Arduino Nano ESP32) as a final choice for the board.
    Hence, the development started as a **C++ project** using the official espressif esp-idf framework.
    \\
-   Unintentionally, during this development period I was also interested in the **Rust programming language** and started reading the @href https://doc.rust-lang.org/book/ official book\ just for fun and out of curiosity.
+   Unintentionally, during this development period I was also interested in the **Rust programming language** and started reading the @href https://doc.rust-lang.org/book/ official book\ $$fs$$ just for fun and out of curiosity.
    As a result, I became very fond of the language, and decided to give it a try and use it for a real project for the first time.
    \\
    In the GitHub repository, I decided to keep both versions of the software @latex {(folders \textit{esp32} and \textit{esp32\_rust}).}
    \\
-   I opted for the @href https://github.com/esp-rs/esp-idf-hal esp-rs/esp-idf\ $$fs$$ **hardware abstraction layer**, which **does** include Rust's standard library but is not carried on officially by espressif, but rather by the community.
+   I opted for the @href https://github.com/esp-rs/esp-idf-hal esp-rs/esp-idf\ $$fs$$ **hardware abstraction layer**, which **does** include Rust's **standard library** but is not carried on officially by espressif, but rather by the community.
    As a result, some C++ libraries might not have been ported to Rust yet, which makes it difficult to completely migrate from C++ to Rust.
    This was the case for **TinyUSB**, an important library I was relying on to declare a composite USB device recognisable by the computer.
    \\
-   To fix this issue, I chose to follow @href https://github.com/esp-rs/esp-idf-template esp-idf template\'s way of mixing C++ and Rust, which suggests to keep the official's *idf.py tools* and C++, with the addition of a **Rust static library**.
+   To fix this issue, I chose to follow @href https://github.com/esp-rs/esp-idf-template esp-idf template\'s way of **mixing** C++ and Rust, which suggests to keep the official's *idf.py tools* and C++, with the addition of a **Rust static library**.
    By using this method, I can still include esp-idf's C++ libraries and expose methods to the Rust library, covering for what Rust's unofficial framework has not implemented yet.
-   \\
+   
+   @newpage\
+   
    Thus, you can find a single C++ file that initializes USB capabilities using TinyUSB and exposes some of its functions to Rust.
-   (MIDI code wrapper example)
+   @code (language=rust, label=lst:label) codes/midi-wrapper.txt\
 }
