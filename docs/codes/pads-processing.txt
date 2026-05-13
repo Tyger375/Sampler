@@ -1,0 +1,64 @@
+fn process_pad_physics(index: u8, settings: &mut DrumPad, value: u16) -> Option<PadInputEvent> {
+    let now = timestamp();
+    const SCAN_TIME_MS: u32 = 5;
+    const RETRIGGER_MASK_MS: u32 = 30; // Helps to debounce by removing noise
+
+    match settings.state {
+        PadState::Idle => {
+            if value > settings.threshold {
+                settings.state = PadState::Attack;
+                settings.peak = value;
+                settings.timer_start = now;
+            }
+            None
+        }
+        PadState::Attack => {
+            // Update peak if sample is higher
+            if value > settings.peak {
+                settings.peak = value;
+            }
+
+            // Wait 5ms
+            if now - settings.timer_start >= SCAN_TIME_MS {
+                settings.state = PadState::Sustain;
+
+                let velocity = (settings.peak >> 5).min(127) as u8;
+
+                Some(PadInputEvent {
+                    index,
+                    channel: settings.channel,
+                    note: settings.note,
+                    velocity: velocity,
+                    event_type: PadInputEventType::MIDI(MidiType::NoteOn),
+                })
+            } else {
+                None
+            }
+        }
+        PadState::Sustain => {
+            // Look for the value to drop below threshold
+            const HYSTERESIS: f32 = 0.7;
+            if value < (settings.threshold as f32 * HYSTERESIS) as u16 {
+                settings.state = PadState::Release;
+                settings.timer_start = now;
+
+                Some(PadInputEvent {
+                    index,
+                    channel: settings.channel,
+                    note: settings.note,
+                    velocity: 0,
+                    event_type: PadInputEventType::MIDI(MidiType::NoteOff),
+                })
+            } else {
+                None
+            }
+        }
+        PadState::Release => {
+            if now - settings.timer_start >= RETRIGGER_MASK_MS {
+                settings.state = PadState::Idle;
+            }
+
+            None
+        }
+    }
+}

@@ -1,0 +1,36 @@
+pub struct ADS1015 {
+    i2c: Arc<Mutex<I2cDriver<'static>>>,
+    cfg_reg: AtomicU16,
+    addr: u8,
+}
+
+impl ADS1015 {
+    pub fn new(
+        i2c: Arc<Mutex<I2cDriver<'static>>>,
+        addr: u8
+    ) -> Self {
+        ADS1015 {
+            i2c,
+            cfg_reg: AtomicU16::new(0),
+            addr,
+        }
+    }
+    // ...
+    pub fn read(&self) -> u16 {
+        const REG_ADDR: [u8; 1] = [0x0];
+        let mut data: [u8; 2] = [0, 0];
+
+        {
+            if let Ok(mut guard) = self.i2c.lock() {
+                guard
+                    .write_read(
+                        self.addr, &REG_ADDR, &mut data, 1000
+                    )
+                    .unwrap();
+            }
+        }
+
+        let raw_val = ((data[0] as u16) << 8) | (data[1] as u16);
+        raw_val >> 4
+    }
+}

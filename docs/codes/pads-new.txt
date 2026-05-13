@@ -1,0 +1,21 @@
+let i2c_config = I2cConfig::new().baudrate(Hertz(400_000));
+let i2c_master = I2cDriver::new(i2c, sda, scl, &i2c_config)?;
+
+let i2c_bus = Arc::new(Mutex::new(i2c_master));
+
+let ads_cfg = ADS1015Config {
+    mux_config: MuxConfig::MUX0,
+    fsr_mode: Fsr6_144,
+    op_mode: OpModeConfig::Continuous,
+    data_rate: DataRateConfig::DataRate3300,
+    comparator_mode: CompModeConfig::Traditional,
+    comparator_polarity: CompPolarityConfig::ActiveLow,
+    comparator_latching: CompLatchingConfig::NonLatching,
+    queue_and_disable: CompQueueDisableConfig::DisableComp,
+};
+
+let ads1 = ADS1015::new(i2c_bus.clone(), addr1);
+let ads2 = ADS1015::new(i2c_bus.clone(), addr2);
+
+ads1.set_config(&ads_cfg)?;
+ads2.set_config(&ads_cfg)?;

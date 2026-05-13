@@ -1,0 +1,29 @@
+/*
+name: "pads_input_task",
+stack_size: 4096,
+priority: 15,
+pin_to_core: Some(Core0),
+*/
+
+let mut channel: usize = 0;
+
+loop {
+    delay_us(750);
+
+    let value1 = ads1.read();
+    let value2 = ads2.read();
+
+    if let Some(item) = process_pad_physics(channel as u8, &mut pads_settings[channel], value1) {
+        queue.send_back(item, 0).unwrap();
+    };
+
+    if let Some(item) = process_pad_physics((channel as u8) + 4, &mut pads_settings[channel + 4], value2) {
+        queue.send_back(item, 0).unwrap();
+    };
+
+    channel = (channel + 1) % 4;
+
+    let cfg = MuxConfig::mux_from(channel as u8);
+    ads1.set_mux(&cfg).unwrap();
+    ads2.set_mux(&cfg).unwrap();
+}

@@ -136,4 +136,76 @@
    
    Thus, you can find a single C++ file that initializes USB capabilities using TinyUSB and exposes some of its functions to Rust.
    @code (language=rust, label=lst:label) codes/midi-wrapper.txt\
+
+   @newpage\
+
+   @section (label=sec:pads-sensing) Pads Management \
+
+   @subsection (label=subsec:adc-driver) ADC Driver\
+   As already mentioned, the pads board needs an MCU to configure the ADCs and read those resistance values.
+   For starters, an **ADS1015 driver** needed to be developed.
+   Module *ads1015/mod.rs* contains all the enums and methods to access and configure the ADCs via I2C communication.
+
+   @code (language=rust, label=lst:ads1015) codes/ads1015.txt\
+
+   Recall that the two ADCs share a single I2C line, therefore, the *I2cDriver* also needs to be shared, which can be done safely by wrapping the struct in a *Mutex*. The ADS1015 structure was designed to work securely in **multi-threading environments**--the only mutable variable is marked as an *Atomic* and all the structure's methods work adopting the **interior mutability** pattern. Listing @ref lst:ads1015\ $$fs$$ shows how the *read* method fetches the latest converted value.
+
+   @newpage\
+
+   @subsection (label=subsec:pads-manager) Pads Manager\
+
+   Following with the **PadsManager** structure, responsible for the actual ADCs handling and reading. The instantiator creates two ADCs variables with the same configuration; the multiplexer is set to convert the first channel first, FSR (full-scale range) and data-rate are set to their maximum values, corresponding to @latex { $\pm6.144V$ } (which is clamped to 5V, the supply voltage) and 3300 SPS (samples per second).
+   The operating mode is obviously set to **continuous**, while the comparator is disabled.
+
+   @code (language=rust, label=lst:pads-new) codes/pads-new.txt\
+
+
+   
+   @newpage\
+
+   PadsManager's main functionality is it's internal task.
+
+   @subsection (label=subsec:sensing-task) Sensing Task\
+   @code (language=rust, label=lst:pads-task) codes/pads-task.txt\
+
+   This is the heart of the pad sensing task (debug symbols were removed for simplicity). A task with relatively high priority (15) is pinned to the processor's Core0 and continuously fetches ADC values and sends events to another task using Rust's *mpsc::channel*.
+   \\
+   Since a single conversion takes **0.3ms**, switching channels on the multiplexer needs some time, a **delay** is added to prevent incorrect data from previous conversions.
+   Switching multiplexer channels and readings from both ADCs is done almost simultaneously to save time, eight pad measurements take around **1.2ms**.
+   Moreover, software correction accounts for hardware inaccuracy and enhances the experience.
+
+   @newpage\
+
+   @code (language=rust, label=lst:pads-processing) codes/pads-processing.txt\
+
+   One pad press goes throught four different stages.
+   @list {
+      @item {
+         When the state is on **Idle**, the program waits for a value to go above a certain threshold, which can be configured individually for each pad.
+      }
+      @item {
+         From that moment, the program enters the **Attack** state--a **5ms window** is opened to look for the highest value, which will be used as the **pad velocity**, a **NoteOn** event is sent, consequently a MIDI event is transmitted to the USB host.
+      }
+      @item {
+         After that, the **Sustain** state starts, the function waits for a value to go below @latex { 70\% } of the configured threshold (allowing a @latex { 30\% } of hysteresis), a **NoteOff** event is sent, followed by a MIDI event.
+      }
+      @item {
+         Finally, the **Release** state waits 30ms for debouncing, preventing the pad to retrigger instantly.
+      }
+   }
+
+   @figure (H) {
+      @graphic (width=$$textwidth$$) images/pads-processing.png\
+      @centering\
+      @caption Software pads processing\
+      @label fig:pads-processing\
+   }
+
+   @newpage\
+
+   @subsection (label=subsec:sending-midi-event) Sending the MIDI Event\
+
+   
+
+   @code (language=rust, label=lst:pads-midi) codes/pads-midi.txt\
 }

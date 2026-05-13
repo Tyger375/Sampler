@@ -1,0 +1,36 @@
+/*
+stack_size: 4096,
+priority: 23,
+pin_to_core: Some(Core::Core1),
+*/
+
+loop {
+    if let Some((packet, _)) = queue.recv_front(delay::BLOCK) {
+        match packet.event_type {
+            PadInputEventType::MIDI(midi_type) => {
+                let midi: (u8, u8) = midi_type.into();
+
+                pads_tx.send(PadButtonEvent {
+                    index: packet.index,
+                    pressed: if let MidiType::NoteOn = midi_type { true } else { false }
+                }).ok();
+
+                if !paused.load(Ordering::Relaxed) {
+                    let bytes: [u8; 4] = [midi.0, midi.1 | (packet.channel & 0x0F), packet.note, packet.velocity];
+                    MIDI::send(&bytes);
+                }
+
+                if let MidiType::NoteOn = midi_type {
+                    leds_manager.set_led(packet.index, true);
+                } else if let MidiType::NoteOff = midi_type {
+                    leds_manager.set_led(packet.index, false);
+                }
+            }
+            PadInputEventType::Debug => {
+                let value = (packet.note as u16) | ((packet.velocity as u16) << 8);
+                Vendor::write_raw(&format!("{}: ({}, {});", packet.index, value, packet.channel));
+                //Vendor::flush();
+            }
+        }
+    };
+}
