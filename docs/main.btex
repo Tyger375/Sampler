@@ -216,9 +216,9 @@
    Currently, the system sends MIDI events as soon as a pad strike is sensed, ignoring the specific timing of the press. While this works for live performances, features like recording or sequencing require the program to quantize these events.
    \\
    By implementing a quantizer, the software can snap the timing of each note to a grid, ensuring the performance stays in sync with a set tempo.
-   We will define our smallest timing quantity a **pulse**, in a time signature of 4/4, a **loop** is divided into **four beats**, which would represent the beats that a metronome would play.
-   Standard pulse resolutions range from **24** to **940** PPQ, pulses (or ticks) per quarter note, a **quarter note** is what we defined a **beat** before.
-   When developing the quantizer, it is useful to define another quantity in between, by dividing a beat (or quarter note) into **four steps**.
+   To achieve this, we define the smallest unit of time as a **pulse**. In a standard 4/4 time signature, a **loop** is divided into **four beats**, represented by the metronome clicks.
+   Standard pulse resolutions typically range from **24 to 940 PPQ**, pulses (or ticks) per quarter note, where a 'quarter note' corresponds to what we earlier defined as a **beat**.
+   For the development of the quantizer, it is practical to introduce an intermediate subdivision by dividing each beat (or quarter note) into **four steps** (1/16th notes).
 
    @figure (H) {
       @graphic (width=$$textwidth$$) images/quantizer-grid.png\
@@ -229,9 +229,37 @@
 
    In figure @ref fig:quantizer-grid\$$fs$$ the timing quantities defined by the bigger lines are the **beats**, each **beat** is then divided into PPQ amount of intervals, smaller lines are what we previously called **steps**.
    \\
-   To reach this level of precision, I'm relying on the ESP32's **general purpose timer**
+   To reach this level of precision, I'm relying on the ESP32's **general purpose timer**. We calculate the pulses interval as
+   @math {
+      @latex {
+         TIMER\_STEP = 
+         \frac{60 \times TIMER\_RESOLUTION}{BPM \times PPQ}
+      }
+   }
+   Setting the timer resolution to a constant @latex {\textit{TIMER\_RESOLUTION},} the timer will call its interrupt exactly every pulse, based on the user-configurable BPM value and the PPQ resolution.
+   \\
+   **Note: ** all these values can be adjusted using the installed LCD display, we will cover graphics and screens later.
 
    @code (language=rust, label=lst:quantizer-new) codes/quantizer-new.txt\
 
+   For simplicity, I decided to break down the timer counting into ticks (pulses) and steps, dividing a quarter note into four steps.
 
+   @code (language=rust, label=lst:quantizer-interrupt) codes/quantizer-interrupt.txt\
+
+   @latex {\textit{TICKS\_PER\_STEP} is just PPQ divided by 4}.
+   \\
+   Since we are in an interrupt context, the routine needs to be quick and non-blocking. An interrupt-safe *Notifier* structure is used to wake up another high-priority task.
+
+   @code (language=rust, label=lst:quantizer-task) codes/quantizer-task.txt\
+
+   A good practice when creating a MIDI device is to send a MIDI synchronization packet. This is a **System Real-Time message** used to synchronize all the connected equipment. It is a single byte status message (it does not contain any data) and it must be sent **24 times per quarter note**, hence it does not depend on our configured PPQ.
+   \\
+   @latex {
+      \textit{notification.wait\_any()}
+   } blocks the thread and waits for a notification from the interrupt, representing a pulse being triggered.
+   After that, a MIDI sync message is transmitted and, as we will discuss later, a sequencer message is sent at the beginning (when ticks is equal to 0) and ending (last tick before a new step) of every step.
+
+   @newpage\
+
+   @section (label=sec:sequencer) Sequencer\
 }

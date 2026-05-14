@@ -4,9 +4,6 @@ pub struct Quantizer {
     timer: TimerDriver<'static>
 }
 
-const PPQ: u8 = 24;
-const TICKS_PER_STEP: u8 = PPQ / 4;
-
 impl Quantizer {
     pub fn new(notifier: Arc<Notifier>) -> Result<Self, EspError> {
         let ticks = Arc::new(AtomicU8::new(TICKS_PER_STEP - 1));
@@ -15,14 +12,14 @@ impl Quantizer {
         let mut timer_conf = TimerConfig::default();
         timer_conf.clock_source = ClockSource::Default;
         timer_conf.direction = CountDirection::Up;
-        timer_conf.resolution = Hertz(40_000_000);
+        timer_conf.resolution = Hertz(TIMER_RESOLUTION);
         timer_conf.intr_priority = 3;
 
         let mut timer = TimerDriver::new(&timer_conf)?;
         timer.subscribe_default()?;
         timer.enable()?;
 
-        // ...
+        // ... timer interrupt
 
         timer.start()?;
 
@@ -34,7 +31,7 @@ impl Quantizer {
     }
 
     pub fn start(&self, bpm: u8) -> Result<(), EspError> {
-        let time = 60u64 * 40_000_000;
+        let time = 60u64 * TIMER_RESOLUTION as u64;
         let ticks = bpm as u64 * PPQ as u64;
         let timer_step = time / ticks;
         self.timer.set_alarm_action(Some(&AlarmConfig {

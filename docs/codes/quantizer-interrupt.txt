@@ -1,0 +1,11 @@
+timer.subscribe(move |_| {
+    let t = ticks.fetch_add(1, Ordering::SeqCst);
+
+    if t + 1 >= TICKS_PER_STEP {
+        ticks.store(0, Ordering::Relaxed);
+        let s = (steps.load(Ordering::SeqCst) + 1) % 16;
+        steps.store(s, Ordering::SeqCst);
+    }
+
+    notifier.notify_and_yield(NonZero::new(1).unwrap());
+})?;

@@ -1,0 +1,30 @@
+/*
+name: "quantizer_task",
+stack_size: 4096,
+priority: 24,
+pin_to_core: Some(Core::Core1),
+*/
+
+let notification = Notification::new();
+let quantizer = Arc::new(Quantizer::new(notification.notifier()).expect("Failed to create quantizer"));
+
+const MIDI_SYNC_MSG: [u8; 4] = [0x0F, 0xF8, 0x00, 0x00];
+
+loop {
+    notification.wait_any();
+    MIDI::send(&MIDI_SYNC_MSG);
+
+    let ticks = quantizer.ticks.load(Ordering::SeqCst);
+    let steps = quantizer.steps.load(Ordering::SeqCst);
+
+    // notifying the quantizer
+    if ticks == 0 {
+        quantizer_seq_tx
+            .send(SequencerMessage::NoteOn(steps))
+            .ok();
+    } else if ticks == 5 {
+        quantizer_seq_tx
+            .send(SequencerMessage::NoteOff(steps))
+            .ok();
+    }
+}

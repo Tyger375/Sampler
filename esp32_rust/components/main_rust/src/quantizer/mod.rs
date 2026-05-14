@@ -61,7 +61,7 @@ impl Quantizer {
     }
 
     pub fn start(&self, bpm: u8) -> Result<(), EspError> {
-        let time = 60u64 * 40_000_000 as u64;
+        let time = 60u64 * TIMER_RESOLUTION as u64;
         let ticks = bpm as u64 * PPQ as u64;
         let timer_step = time / ticks;
         self.timer.set_alarm_action(Some(&AlarmConfig {
