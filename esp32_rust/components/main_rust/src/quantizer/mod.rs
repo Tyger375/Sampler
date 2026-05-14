@@ -1,7 +1,7 @@
 use std::num::NonZero;
 use esp_idf_svc::hal::timer::config::{AlarmConfig, ClockSource, CountDirection, TimerConfig};
 use esp_idf_svc::hal::timer::TimerDriver;
-use esp_idf_svc::hal::units::HertzU64;
+use esp_idf_svc::hal::units::Hertz;
 use esp_idf_svc::sys::EspError;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
@@ -15,7 +15,7 @@ pub struct Quantizer {
 
 const PPQ: u8 = 24;
 const TICKS_PER_STEP: u8 = PPQ / 4;
-const TIMER_RESOLUTION: u64 = 40_000_000; // Hertz
+const TIMER_RESOLUTION: u32 = 40_000_000; // Hertz
 
 impl Quantizer {
     pub fn new(notifier: Arc<Notifier>) -> Result<Self, EspError> {
@@ -25,7 +25,7 @@ impl Quantizer {
         let mut timer_conf = TimerConfig::default();
         timer_conf.clock_source = ClockSource::Default;
         timer_conf.direction = CountDirection::Up;
-        timer_conf.resolution = HertzU64(TIMER_RESOLUTION);
+        timer_conf.resolution = Hertz(TIMER_RESOLUTION);
         timer_conf.intr_priority = 3;
 
         println!("{:?}", timer_conf);
@@ -61,7 +61,7 @@ impl Quantizer {
     }
 
     pub fn start(&self, bpm: u8) -> Result<(), EspError> {
-        let time = 60u64 * 40_000_000;
+        let time = 60u64 * 40_000_000 as u64;
         let ticks = bpm as u64 * PPQ as u64;
         let timer_step = time / ticks;
         self.timer.set_alarm_action(Some(&AlarmConfig {
