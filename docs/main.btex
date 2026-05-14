@@ -159,16 +159,14 @@
 
    @code (language=rust, label=lst:pads-new) codes/pads-new.txt\
 
-
-   
    @newpage\
 
+   @subsection (label=subsec:sensing-task) Sensing Task\
    PadsManager's main functionality is it's internal task.
 
-   @subsection (label=subsec:sensing-task) Sensing Task\
    @code (language=rust, label=lst:pads-task) codes/pads-task.txt\
 
-   This is the heart of the pad sensing task (debug symbols were removed for simplicity). A task with relatively high priority (15) is pinned to the processor's Core0 and continuously fetches ADC values and sends events to another task using Rust's *mpsc::channel*.
+   This is the heart of the pad sensing task (debug symbols were removed for simplicity). A task with relatively high priority (15) is pinned to the processor's Core0 and continuously fetches ADC values and sends events to another task using FreeRTOS's *Queue*.
    \\
    Since a single conversion takes **0.3ms**, switching channels on the multiplexer needs some time, a **delay** is added to prevent incorrect data from previous conversions.
    Switching multiplexer channels and readings from both ADCs is done almost simultaneously to save time, eight pad measurements take around **1.2ms**.
@@ -203,9 +201,33 @@
 
    @newpage\
 
-   @subsection (label=subsec:sending-midi-event) Sending the MIDI Event\
+   @subsection (label=subsec:sending-midi-event) Sending MIDI Events\
 
-   
+   Events that are sent to the **queue** are consumed by another task with a higher priority, which sends final MIDI events to the USB host, and also controls LEDs for the pads. Again, debug symbols were removed for simplicity.
 
    @code (language=rust, label=lst:pads-midi) codes/pads-midi.txt\
+
+   This code enables a 'free mode' for the drum pads, where pressing different pads sends configurable MIDI notes to the computer. By using a software sampler like **TX16Wx**, these MIDI events can be used to trigger and play back digital samples.
+
+   @newpage\
+
+   @section (label=sec:quantizer) Quantizer\
+
+   Currently, the system sends MIDI events as soon as a pad strike is sensed, ignoring the specific timing of the press. While this works for live performances, features like recording or sequencing require the program to quantize these events.
+   \\
+   By implementing a quantizer, the software can snap the timing of each note to a grid, ensuring the performance stays in sync with a set tempo.
+   We will define our smallest timing quantity a **pulse**, in a time signature of 4/4, a **loop** is divided into **four beats**, which would represent the beats that a metronome would play.
+   Standard pulse resolutions range from **24** to **940** PPQ, pulses (or ticks) per quarter note, a **quarter note** is what we defined a **beat** before.
+   When developing the quantizer, it is useful to define another quantity in between, by dividing a beat (or quarter note) into **four steps**.
+
+   @figure (H) {
+      @graphic (width=$$textwidth$$) images/quantizer-grid.png\
+      @centering\
+      @caption The quantizer grid\
+      @label fig:quantizer-grid\
+   }
+
+   In figure @ref fig:quantizer-grid\$$fs$$ the timing quantities defined by the bigger lines are the **beats**, each **beat** is then divided into PPQ amount of intervals, smaller lines are what we previously called **steps**.
+   \\
+   
 }

@@ -227,10 +227,10 @@ extern "C" fn rust_main() {
         let queue = pads_manager.pads_midi_events.clone();
         let paused = pads_midi_paused.clone();
         let _handle = spawn_task!({
-            name: "pads_input_task",
+            name: "pads_midi_task",
             stack_size: 4096,
             priority: 23,
-            pin_to_core: Some(Core::Core1),
+            pin_to_core: Some(Core::Core0),
         }, move || {
             loop {
                 if let Some((packet, _)) = queue.recv_front(delay::BLOCK) {

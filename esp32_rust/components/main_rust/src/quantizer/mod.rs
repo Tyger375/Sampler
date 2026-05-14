@@ -7,16 +7,16 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 use esp_idf_svc::hal::task::notification::Notifier;
 
-pub struct Quantizer<'a> {
+pub struct Quantizer {
     pub ticks: Arc<AtomicU8>,
     pub steps: Arc<AtomicU8>,
-    timer: TimerDriver<'a>
+    timer: TimerDriver<'static>
 }
 
 const PPQ: u8 = 24;
 const TICKS_PER_STEP: u8 = PPQ / 4;
 
-impl<'a> Quantizer<'a> {
+impl Quantizer {
     pub fn new(notifier: Arc<Notifier>) -> Result<Self, EspError> {
         let ticks = Arc::new(AtomicU8::new(TICKS_PER_STEP - 1));
         let steps = Arc::new(AtomicU8::new(15));
@@ -60,9 +60,6 @@ impl<'a> Quantizer<'a> {
     }
 
     pub fn start(&self, bpm: u8) -> Result<(), EspError> {
-        //self.ticks.store(TICKS_PER_STEP - 1, Ordering::Relaxed);
-        //self.steps.store(15, Ordering::Relaxed);
-
         let time = 60u64 * 40_000_000;
         let ticks = bpm as u64 * PPQ as u64;
         let timer_step = time / ticks;
