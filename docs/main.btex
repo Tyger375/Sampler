@@ -229,5 +229,9 @@
 
    In figure @ref fig:quantizer-grid\$$fs$$ the timing quantities defined by the bigger lines are the **beats**, each **beat** is then divided into PPQ amount of intervals, smaller lines are what we previously called **steps**.
    \\
-   
+   To reach this level of precision, I'm relying on the ESP32's **general purpose timer**
+
+   @code (language=rust, label=lst:quantizer-new) codes/quantizer-new.txt\
+
+
 }
