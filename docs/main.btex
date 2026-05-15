@@ -262,4 +262,45 @@
    @newpage\
 
    @section (label=sec:sequencer) Sequencer\
+
+   A sequencer enables the recording of a musical performance by capturing and storing note triggers relative to a master timeline. By mapping these events to specific timestamps, the sequencer can accurately reproduce the performance with consistent rhythmic integrity.
+   \\
+   You can think of a sequencer performance as FL Studio's channel rack, each instrument has a different programmed pattern which repeats endlessly.
+   @figure (H) {
+      @graphic (width=$$textwidth$$) images/fl-channel-rack.png\
+      @centering\
+      @caption FL Studio's Channel Rack\
+      @label fig:fl-channel-rack\
+   }
+   Thus, a sequencer project is structured as a **list of tracks**.
+   @code (language=rust, label=lst:sequencer-project) codes/sequencer-project.txt\
+   While earlier we defined the largest unit of time as a loop, containing four quarter notes, a sequencer performance allows for more complex patterns with **multiple loops**.
+   Each track has its own loops count, we do not need to program for four loops a simple hi-hat 2-step pattern, simply setting the @latex {\textit{project\_loop}} to 4 and @latex {\textit{track\_loop}} to 1 will do the trick.
+   Obviously, @latex {\textit{track\_loop}} needs to be a multiple of @latex {\textit{project\_loop}}.
+   \\
+   Notes can be programmed using the eight pads, when the Sampler is set to track programming mode, the pads LEDs stay on for set triggers, while project and tracks configurations can be edited from their screens.
+   Since only eight pads for a sequencer might not be ideal, I added a **resolution parameter** to each track. Resolutions range from each note representing a whole loop note, to represent a single quarter note.
+   @code (language=rust, label=lst:sequencer-resolutions) codes/sequencer-resolutions.txt\
+   Mind that in this context, quarter notes and beats are **not** used as synonyms--I defined quarter notes as a quarter of a beat (1/16th of a loop).
+   \\
+   The sequencer is handled by **another high-priority task**, which constantly waits for messages sent by the **quantizer** using Rust's *mpsc::channel()*.
+   @code (language=rust, label=lst:sequencer-task) codes/sequencer-task.txt\
+   From this moment, the sequencer handles the triggers.
+   @code (language=rust, label=lst:sequencer-handlers) codes/sequencer-handlers.txt\
+   Since track triggers are saved as pads indexes, before checking if a MIDI packet should be sent, the trigger value must be converted as a relative trigger.
+   \\
+   (Image explanation)
+   \\
+
+   @newpage\
+
+   @section (label=sec:graphics) Graphics\
+
+   The most complex library I have written in this project is definitely the part that handles **graphics**.
+   When designing such library, I aimed at some 'high' level abstraction which would separate hardware communication from UI composition.
+   A lot of inspiration was taken from Android's (now) old style of structuring UIs and Applications--Android XML.
+   At the moment, I am using a **text-based** 16x2 LCD display, thus, the graphics library heavily relies on Rust's *String* structure.
+   \\
+   The **GraphicsManager** is the core of this graphics library, this structure stores **screen instantiators**, installs **graphics drivers** and handles **graphics Events**.
+   This graphics set of utilities relies on **graphics Events**, a screen is only refreshed when an update is sent. Events are sent from hardware controls, like pads pressing, controller movements etc.
 }

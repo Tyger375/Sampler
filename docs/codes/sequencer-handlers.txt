@@ -1,0 +1,37 @@
+pub fn step_trigger_on(&self, step: u8) {
+    // ...
+    for (track, state) in project.tracks.iter().zip(guard.iter_mut()) {
+        let track_step = step + (16 * (current_loop % track.loops));
+        Self::handle_track_on(track, track_step, state);
+    }
+}
+fn handle_track_on(track: &SequencerTrack, step: u8, state_trigger: &mut bool) {
+    for trigger in track.triggers.iter() {
+        let real_trigger = trigger * (track.resolution as u8);
+        if real_trigger == step {
+            *state_trigger = true;
+            MIDI::send(&[0x09, 0x90, track.note, 127]);
+        }
+    }
+}
+
+pub fn step_trigger_off(&self, step: u8) {
+    // ...
+    for (track, state) in project.tracks.iter().zip(guard.iter_mut()) {
+        let track_step = step + (16 * (current_loop % track.loops));
+        Self::handle_track_off(track, track_step, state);
+    }
+
+    if step == 15 {
+        self.current_loop.store((current_loop + 1) % project.loops, Ordering::Relaxed);
+    }
+}
+fn handle_track_off(track: &SequencerTrack, step: u8, state_trigger: &mut bool) {
+    for trigger in track.triggers.iter() {
+        let real_trigger = ((trigger + 1) * (track.resolution as u8)) - 1;
+        if real_trigger == step {
+            *state_trigger = false;
+            MIDI::send(&[0x08, 0x80, track.note, 0]);
+        }
+    }
+}

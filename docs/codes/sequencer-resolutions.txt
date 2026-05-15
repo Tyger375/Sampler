@@ -1,0 +1,6 @@
+pub enum SequencerResolution {
+    Quarter     = 1,
+    HalfBeat    = 2,
+    Beat        = 4,
+    Loop        = 16,
+}

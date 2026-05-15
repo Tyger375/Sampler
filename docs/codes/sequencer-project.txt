@@ -1,0 +1,12 @@
+pub struct SequencerTrack {
+    pub loops: u8,
+    pub resolution: SequencerResolution,
+    pub note: u8,
+    pub triggers: Vec<u8>,
+}
+
+pub struct SequencerProject {
+    pub name: String,
+    pub loops: u8,
+    pub tracks: Vec<SequencerTrack>
+}

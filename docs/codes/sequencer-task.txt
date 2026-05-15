@@ -1,0 +1,20 @@
+/*
+name: "sequencer_task",
+stack_size: 4096,
+priority: 23,
+pin_to_core: Some(Core::Core1),
+*/
+loop {
+    if let Ok(item) = sequencer_channel.recv() {
+        if sequencer.enabled() {
+            match item {
+                SequencerMessage::NoteOn(step) => {
+                    sequencer.step_trigger_on(step);
+                }
+                SequencerMessage::NoteOff(step) => {
+                    sequencer.step_trigger_off(step);
+                }
+            }
+        }
+    }
+}
