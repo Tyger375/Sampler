@@ -1,0 +1,22 @@
+pub struct ScreenData {
+    pub elements: Vec<Box<dyn UIElement>>,
+    pub row_offset: usize,
+    pub focus: bool
+}
+
+pub trait Screen {
+    fn get_data(&self) -> &ScreenData;
+    fn get_data_mut(&mut self) -> &mut ScreenData;
+
+    fn on_start(&mut self);
+    fn on_end(&mut self);
+
+    fn on_click(&mut self);
+    fn on_back(&mut self) -> bool;
+    fn on_scroll(&mut self, direction: bool);
+
+    fn on_custom_event(&mut self, _event: u32) -> bool;
+
+    fn refresh(&mut self, _message: String);
+    fn render(&self, selector_press: bool) -> Vec<String>;
+}

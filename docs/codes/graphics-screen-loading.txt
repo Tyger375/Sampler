@@ -1,0 +1,23 @@
+pub fn load_screen<F>(&mut self, id: &'a str, factory: F)
+where F: Fn(ScreenArgs) -> Box<dyn Screen> + 'static {
+    self.screens_factories.insert(id, Box::new(factory));
+}
+
+fn navigate_screen(&mut self, id: &'a str, mut screen: Box<dyn Screen>) {
+    if let Some(current_screen) = self.current_screen.as_mut() {
+        current_screen.1.on_end();
+    }
+
+    screen.on_start();
+    self.current_screen = Some((id, screen));
+}
+
+pub fn navigate(&mut self, id: &str, _args: Vec<String>) {
+    let (id, factory) = self.screens_factories.get_key_value(id).expect("Couldn't find screen");
+
+    if let Some(current_screen) = self.current_screen.as_mut() {
+        self.backstack.push(current_screen.0);
+    }
+
+    self.navigate_screen(id, factory(None));
+}

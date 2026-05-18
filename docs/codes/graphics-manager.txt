@@ -1,0 +1,6 @@
+pub struct GraphicsManager<'a> {
+    drivers: Vec<Box<dyn GraphicsDriver>>,
+    screens_factories: HashMap<&'a str, Box<dyn Fn(ScreenArgs) -> Box<dyn Screen>>>,
+    current_screen: Option<(&'a str, Box<dyn Screen>)>,
+    backstack: Vec<&'a str>
+}

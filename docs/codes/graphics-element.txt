@@ -1,0 +1,7 @@
+pub trait UIElement {
+    fn render(&self, state: UIElementState) -> String;
+
+    fn on_event(&mut self, _event: GraphicsEvent) -> bool {
+        false
+    }
+}

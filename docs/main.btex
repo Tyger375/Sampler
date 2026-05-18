@@ -121,7 +121,9 @@
    Hence, the development started as a **C++ project** using the official espressif esp-idf framework.
    \\
    Unintentionally, during this development period I was also interested in the **Rust programming language** and started reading the @href https://doc.rust-lang.org/book/ official book\ $$fs$$ just for fun and out of curiosity.
-   As a result, I became very fond of the language, and decided to give it a try and use it for a real project for the first time.
+   I became deeply fond of the language; despite to Rust's strict yet principled rules, transitioning from C++ was challenging but ultimately allowed me to write **safer and more predictable code**.
+   As a result, I decided to utilize Rust for a real-world project for the first time.
+   Adapting to a completely different programming language philosophy--especially Rust's paradigm, which differs drastically from most languages--was not a seamless process, and I have yet to master it completely. Nevertheless, it proved to be an incredibly rewarding and exciting challenge, and I fully intend to continue experimenting with the language in the future.
    \\
    In the GitHub repository, I decided to keep both versions of the software @latex {(folders \textit{esp32} and \textit{esp32\_rust}).}
    \\
@@ -136,6 +138,9 @@
    
    Thus, you can find a single C++ file that initializes USB capabilities using TinyUSB and exposes some of its functions to Rust.
    @code (language=rust, label=lst:label) codes/midi-wrapper.txt\
+
+   A primary focus during the software architecture design was achieving a **high level of abstraction**. Because this project is intended to be an evolving platform for long-term development, the ability to seamlessly modify and upgrade parts of the code was a must (thus, keeping that modular philosophy for both hardware and software design).
+   Throughtout this paper, it will become evident how the codebase is divided into **independent, decoupled 'libraries'**--separating graphical rendering, system settings, and hardware configurations to maximize maintainability.
 
    @newpage\
 
@@ -298,9 +303,58 @@
 
    The most complex library I have written in this project is definitely the part that handles **graphics**.
    When designing such library, I aimed at some 'high' level abstraction which would separate hardware communication from UI composition.
-   A lot of inspiration was taken from Android's (now) old style of structuring UIs and Applications--Android XML.
+   A lot of inspiration was taken from Android's (now) old style of building UIs and Applications--Android XML.
+   \\
    At the moment, I am using a **text-based** 16x2 LCD display, thus, the graphics library heavily relies on Rust's *String* structure.
    \\
    The **GraphicsManager** is the core of this graphics library, this structure stores **screen instantiators**, installs **graphics drivers** and handles **graphics Events**.
+
+   @code (language=rust, label=lst:graphics-manager) codes/graphics-manager.txt\
+
    This graphics set of utilities relies on **graphics Events**, a screen is only refreshed when an update is sent. Events are sent from hardware controls, like pads pressing, controller movements etc.
+
+   @code (language=rust, label=lst:graphics-events) codes/graphics-events.txt\
+
+   Graphics events are sent by the graphics manager to the **current screen**, which will dispatch them to the focused UIElement.
+
+   @newpage\
+
+   @subsection (label=subsec:screen) Screen\
+
+   UIs are built on **screens**, which can be compared to **Android's Activities**.
+   Default method implementations are omitted for simplicity.
+
+   @code (language=rust, label=lst:graphics-screen) codes/graphics-screen.txt\
+   
+   A screen can contain different UIElements, like texts, buttons etc.
+   \\
+   At startup, the main thread loads the GraphicsManager with all the screen instantiators (initializers).
+   The instantiators are summoned when required.
+
+   @code (language=rust, label=lst:graphics-screen-loading) codes/graphics-screen-loading.txt\
+
+   @newpage\
+
+   @subsection (label=subsec:uielement) UIElement\
+
+   A *UIElement* takes a whole line on the LCD, a render method returns the text to render on screen, an @latex {on\_event} method handles events to consume graphics interactions, a boolean value is returned to specify if the component requires internal focus.
+
+   @code (language=rust, label=lst:graphics-element) codes/graphics-element.txt\
+
+   Below, the button component is reported as an example.
+
+   @code (language=rust, label=lst:graphics-button) codes/graphics-button.txt\
+
+   @newpage\
+
+   @subsection (label=subsec:rendering) Rendering and Graphics Drivers\
+
+   As mentioned before, display refreshes are triggered only when needed. The GraphicsManager calls the current screen's render function, which iterates throught two on-screen components and invokes their render methods.
+   After that, the manager iterates throught installed graphics drivers and sends those returned strings for rendering.
+
+   @code (language=rust, label=lst:graphics-driver) codes/graphics-driver.txt\
+
+   When developing this graphics library, I opted for an almost completely abstract approach, so that future changes or updates will result easy and effortless.
+
+   @section (label=sec:settings) Settings and Configurations\
 }
