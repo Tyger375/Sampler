@@ -13,7 +13,7 @@ pub struct Quantizer {
     timer: TimerDriver<'static>
 }
 
-const PPQ: u8 = 24;
+pub const PPQ: u8 = 96;
 const TICKS_PER_STEP: u8 = PPQ / 4;
 const TIMER_RESOLUTION: u32 = 40_000_000; // Hertz
 
@@ -28,7 +28,7 @@ impl Quantizer {
         timer_conf.resolution = Hertz(TIMER_RESOLUTION);
         timer_conf.intr_priority = 3;
 
-        println!("{:?}", timer_conf);
+        log::info!("{:?}", timer_conf);
 
         let mut timer = TimerDriver::new(&timer_conf)?;
         timer.subscribe_default()?;
@@ -64,6 +64,8 @@ impl Quantizer {
         let time = 60u64 * TIMER_RESOLUTION as u64;
         let ticks = bpm as u64 * PPQ as u64;
         let timer_step = time / ticks;
+        log::info!("Timer Step: {timer_step}");
+
         self.timer.set_alarm_action(Some(&AlarmConfig {
             alarm_count: timer_step,
             auto_reload_on_alarm: true,

@@ -281,7 +281,7 @@
    @code (language=rust, label=lst:sequencer-project) codes/sequencer-project.txt\
    While earlier we defined the largest unit of time as a loop, containing four quarter notes, a sequencer performance allows for more complex patterns with **multiple loops**.
    Each track has its own loops count, we do not need to program for four loops a simple hi-hat 2-step pattern, simply setting the @latex {\textit{project\_loop}} to 4 and @latex {\textit{track\_loop}} to 1 will do the trick.
-   Obviously, @latex {\textit{track\_loop}} needs to be a multiple of @latex {\textit{project\_loop}}.
+   Obviously, @latex {\textit{track\_loop}} needs to be a multiple of @latex {\textit{project\_loop}.}
    \\
    Notes can be programmed using the eight pads, when the Sampler is set to track programming mode, the pads LEDs stay on for set triggers, while project and tracks configurations can be edited from their screens.
    Since only eight pads for a sequencer might not be ideal, I added a **resolution parameter** to each track. Resolutions range from each note representing a whole loop note, to represent a single quarter note.

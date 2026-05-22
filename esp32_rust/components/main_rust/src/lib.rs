@@ -4,7 +4,7 @@ use crate::graphics::manager::GraphicsManager;
 use crate::midi::{MidiType, MIDI};
 use crate::navigator::NavigatorMessage;
 use crate::pads::{PadButtonEvent, PadInputEventType, PadsManager};
-use crate::quantizer::Quantizer;
+use crate::quantizer::{Quantizer, PPQ};
 use crate::screens::home::HomeScreen;
 use crate::screens::pad_settings::PadSettings;
 use crate::screens::settings::SettingsScreen;
@@ -316,6 +316,8 @@ extern "C" fn rust_main() {
             priority: 24,
             pin_to_core: Some(Core::Core1),
         }, move || {
+            const MIDI_SYNC_STEPS: u8 = PPQ / 24;
+
             let notification = Notification::new();
             let quantizer = Arc::new(Quantizer::new(notification.notifier()).expect("Failed to create quantizer"));
             settings.get_component::<ConfigComponent, _, _>("config", |component| {
@@ -324,6 +326,8 @@ extern "C" fn rust_main() {
 
             const MIDI_SYNC_MSG: [u8; 4] = [0x0F, 0xF8, 0x00, 0x00];
 
+            let mut midi_sync_step = 0u8;
+
             loop {
                 if let Ok(item) = quantizer_rx.try_recv() {
                     log::info!("Starting quantizer with bpm: {item}");
@@ -331,7 +335,10 @@ extern "C" fn rust_main() {
                 }
 
                 notification.wait_any();
-                MIDI::send(&MIDI_SYNC_MSG);
+                if midi_sync_step == 0 {
+                    MIDI::send(&MIDI_SYNC_MSG);
+                }
+                midi_sync_step = (midi_sync_step + 1) % MIDI_SYNC_STEPS;
 
                 let ticks = quantizer.ticks.load(Ordering::SeqCst);
                 let steps = quantizer.steps.load(Ordering::SeqCst);
