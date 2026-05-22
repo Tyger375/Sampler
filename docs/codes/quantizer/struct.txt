@@ -1,0 +1,5 @@
+pub struct Quantizer {
+    pub ticks: Arc<AtomicU8>,
+    pub steps: Arc<AtomicU8>,
+    timer: TimerDriver<'static>
+}

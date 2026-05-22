@@ -1,0 +1,12 @@
+pub fn load_config_or_default<T>(path: &str) -> T
+where T: Serialize + DeserializeOwned + Default {
+    if let Ok(content) = fs::read_to_string(path) {
+        if let Ok(config) = toml::from_str::<T>(&content) {
+            return config;
+        }
+    }
+    // Fallback: If the file is missing or broken, create a default one on the fly
+    let default_conf = T::default();
+    save_config(path, &default_conf);
+    default_conf
+}

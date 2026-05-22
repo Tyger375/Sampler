@@ -1,0 +1,18 @@
+pub fn add_component<T, F>(&self, id: &'static str, f: F)
+where T: SettingsComponent, F: FnOnce(Sender<C>) -> T {
+    let mut components = self.components.lock().unwrap();
+    components.insert(id, Box::new(f(self.tx.clone())));
+}
+
+pub fn get_component<T, F, R>(
+    &self,
+    id: &str,
+    f: F
+) -> Option<R>
+where T: SettingsComponent, F: FnOnce(&T) -> R,
+{
+    let components = self.components.lock().unwrap();
+    components.get(id).and_then(|boxed| {
+        boxed.as_any().downcast_ref::<T>()
+    }).map(f)
+}
