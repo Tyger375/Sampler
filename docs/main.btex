@@ -247,7 +247,7 @@
    @code (language=rust, label=lst:quantizer-new) codes/quantizer/new.txt\
    
    The hardware timer does not start immediately when the quantizer is instantiated because it waits for a valid **BPM** value to be supplied.
-   The main software loop is responsible for retrieving this information--either loading it from a local file configuration at boot or receiving a real-time update from the Display task--and passing it to the quantizer by invoking the *start* method.
+   The main software loop is responsible for retrieving this information--either loading it from a local file configuration at boot or receiving a real-time update from the display task--and passing it to the quantizer by invoking the *start* method.
    At this point, we calculate the required pulse interval (the timer step) in microseconds using the following formula:
    @math {
       @latex {
@@ -276,7 +276,7 @@
    @latex {
       \textit{notification.wait\_any()}
    } blocks the thread and waits for a notification from the interrupt, representing a pulse being triggered.
-   After that, a MIDI sync message is transmitted and, as we will discuss later, a sequencer message is sent at the beginning (when ticks is equal to 0) and ending (last tick before a new step) of every step.
+   After that, a MIDI sync message is transmitted every @latex {$PPQ \div 24$} quantizer ticks and, as we will discuss later, a sequencer message is sent at the beginning (when ticks are equal to 0) and ending (last tick before a new step) of every step.
 
    @newpage\
 
@@ -308,8 +308,15 @@
    @code (language=rust, label=lst:sequencer-handlers) codes/sequencer/handlers.txt\
    Since track triggers are saved as pads indexes, before checking if a MIDI packet should be sent, the trigger value must be converted as a relative trigger.
    \\
-   (Image explanation)
-   \\
+   @figure (H) {
+      @graphic (width=1$$textwidth$$) images/quantizer-project.png\
+      @centering\
+      @caption A quantizer project example\
+      @label fig:quantizer-project\
+   }
+   Figure @ref fig:quantizer-project\$$fs$$ shows an example of a **one loop project** with two tracks, emulating a simple 2-step hi-hat and snare pattern.
+   The hi-hat pattern represented with red steps is configured with a resolution of *HalfBeat* and by triggering every single sequencer step on the drumpad.
+   The snare pattern is shown colored in blue and is configured with a *Beat* resolution and by triggering the third pad on the first row of the drumpad.
 
    @newpage\
 

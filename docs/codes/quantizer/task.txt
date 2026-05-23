@@ -4,15 +4,18 @@ stack_size: 4096,
 priority: 24,
 pin_to_core: Some(Core::Core1),
 */
-
 let notification = Notification::new();
 let quantizer = Arc::new(Quantizer::new(notification.notifier()).expect("Failed to create quantizer"));
 
+const MIDI_SYNC_STEPS: u8 = PPQ / 24;
 const MIDI_SYNC_MSG: [u8; 4] = [0x0F, 0xF8, 0x00, 0x00];
 
 loop {
     notification.wait_any();
-    MIDI::send(&MIDI_SYNC_MSG);
+    if midi_sync_step == 0 {
+        MIDI::send(&MIDI_SYNC_MSG);
+    }
+    midi_sync_step = (midi_sync_step + 1) % MIDI_SYNC_STEPS;
 
     let ticks = quantizer.ticks.load(Ordering::SeqCst);
     let steps = quantizer.steps.load(Ordering::SeqCst);
@@ -20,11 +23,9 @@ loop {
     // notifying the quantizer
     if ticks == 0 {
         quantizer_seq_tx
-            .send(SequencerMessage::NoteOn(steps))
-            .ok();
+            .send(SequencerMessage::NoteOn(steps)).ok();
     } else if ticks == 5 {
         quantizer_seq_tx
-            .send(SequencerMessage::NoteOff(steps))
-            .ok();
+            .send(SequencerMessage::NoteOff(steps)).ok();
     }
 }
