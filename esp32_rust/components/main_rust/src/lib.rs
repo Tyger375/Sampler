@@ -4,7 +4,7 @@ use crate::graphics::manager::GraphicsManager;
 use crate::midi::{MidiType, MIDI};
 use crate::navigator::NavigatorMessage;
 use crate::pads::{PadButtonEvent, PadInputEventType, PadsManager};
-use crate::quantizer::{Quantizer, PPQ};
+use crate::quantizer::{Quantizer, PPQ, TICKS_PER_STEP};
 use crate::screens::home::HomeScreen;
 use crate::screens::pad_settings::PadSettings;
 use crate::screens::settings::SettingsScreen;
@@ -33,6 +33,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::{ptr, thread};
 use crate::leds_manager::LedsManager;
+use crate::screens::drumpad::DrumPadScreen;
 use crate::screens::sequencer::SequencerScreen;
 use crate::screens::sequencer_project::SequencerProjectScreen;
 use crate::screens::sequencer_tracks::SequencerTracksScreen;
@@ -219,7 +220,7 @@ extern "C" fn rust_main() {
     let leds_manager = Arc::new(LedsManager::new(i2c_master.clone(), 0x20));
 
     // Pads manager
-    let (pads_tx, pads_rx) = mpsc::channel();
+    let (pads_tx, pads_rx) = mpsc::channel::<PadButtonEvent>();
     let pads_midi_paused = Arc::new(AtomicBool::new(false));
 
     {
@@ -345,7 +346,7 @@ extern "C" fn rust_main() {
 
                 if ticks == 0 {
                     quantizer_seq_tx.send(SequencerMessage::NoteOn(steps)).ok();
-                } else if ticks == 5 {
+                } else if ticks == TICKS_PER_STEP - 1 {
                     quantizer_seq_tx.send(SequencerMessage::NoteOff(steps)).ok();
                 }
             }
@@ -366,6 +367,7 @@ extern "C" fn rust_main() {
     let (navigator, navigator_rx) = mpsc::channel::<NavigatorMessage>();
 
     graphics_manager.load_screen("home", HomeScreen::factory(navigator.clone()));
+    graphics_manager.load_screen("drumpad", DrumPadScreen::factory(navigator.clone()));
     graphics_manager.load_screen(
         "settings",
         SettingsScreen::factory(

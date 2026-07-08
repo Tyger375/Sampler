@@ -25,19 +25,31 @@ impl HomeScreen {
         let mut row = UIRow::new();
 
         let nav = navigator.clone();
-        let settings_btn = UIButton::new("Settings".to_string(), move || {
-            log::info!("Navigating to settings");
-            nav.clone().send(NavigatorMessage::Navigate("settings".to_string())).ok();
+        let drumpad_btn = UIButton::new("Drumpad".to_string(), move || {
+            nav.clone()
+                .send(NavigatorMessage::Navigate("drumpad".to_string()))
+                .ok();
         });
-        row.add_element(settings_btn);
+        row.add_element(drumpad_btn);
 
         let nav = navigator.clone();
         let sequencer_btn = UIButton::new("Sequencer".to_string(), move || {
-            nav.clone().send(NavigatorMessage::Navigate("sequencer".to_string())).ok();
+            nav.clone()
+                .send(NavigatorMessage::Navigate("sequencer".to_string()))
+                .ok();
         });
         row.add_element(sequencer_btn);
 
         data.add_element(row);
+
+        let nav = navigator.clone();
+        let settings_btn = UIButton::new("Settings".to_string(), move || {
+            log::info!("Navigating to settings");
+            nav.clone()
+                .send(NavigatorMessage::Navigate("settings".to_string()))
+                .ok();
+        });
+        data.add_element(settings_btn);
 
         HomeScreen {
             data

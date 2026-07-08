@@ -14,7 +14,7 @@ pub struct Quantizer {
 }
 
 pub const PPQ: u8 = 96;
-const TICKS_PER_STEP: u8 = PPQ / 4;
+pub const TICKS_PER_STEP: u8 = PPQ / 4;
 const TIMER_RESOLUTION: u32 = 40_000_000; // Hertz
 
 impl Quantizer {
